@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -11,9 +12,10 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
+// Input schema now expects a single string of reviews (e.g., a summary)
 const AnalyzeRestaurantReviewsInputSchema = z.object({
   restaurantName: z.string().describe('The name of the restaurant to analyze.'),
-  reviews: z.string().describe('The reviews of the restaurant.'),
+  reviews: z.string().describe('A summary of reviews for the restaurant.'),
 });
 export type AnalyzeRestaurantReviewsInput = z.infer<
   typeof AnalyzeRestaurantReviewsInputSchema
@@ -22,24 +24,24 @@ export type AnalyzeRestaurantReviewsInput = z.infer<
 const AnalyzeRestaurantReviewsOutputSchema = z.object({
   overallSentiment: z
     .string()
-    .describe('The overall sentiment towards the restaurant (positive, negative, neutral).'),
+    .describe('The overall sentiment towards the restaurant (positive, negative, neutral) based on the review summary.'),
   keyAspects:
     z.object({
       food: z
         .string()
-        .describe('Sentiment and details about the food, extracted from the reviews.'),
+        .describe('Sentiment and details about the food, extracted from the review summary.'),
       service:
-        z.string().describe('Sentiment and details about the service.'),
+        z.string().describe('Sentiment and details about the service, extracted from the review summary.'),
       ambiance: z
         .string()
-        .describe('Sentiment and details about the ambiance.'),
+        .describe('Sentiment and details about the ambiance, extracted from the review summary.'),
     })
-    .describe('Key aspects of the restaurant and their sentiment.'),
+    .describe('Key aspects of the restaurant and their sentiment, based on the review summary.'),
   groupDiningExperience:
     z
       .string()
       .describe(
-        'Mentions of group dining experiences, suitability for groups, and related aspects.'
+        'Mentions of group dining experiences, suitability for groups, and related aspects from the review summary.'
       ),
 });
 export type AnalyzeRestaurantReviewsOutput = z.infer<
@@ -56,12 +58,12 @@ const analyzeRestaurantReviewsPrompt = ai.definePrompt({
   name: 'analyzeRestaurantReviewsPrompt',
   input: {schema: AnalyzeRestaurantReviewsInputSchema},
   output: {schema: AnalyzeRestaurantReviewsOutputSchema},
-  prompt: `You are an AI expert in analyzing restaurant reviews. Your goal is to extract key information from the reviews to help users quickly understand if a restaurant is suitable for their group.
+  prompt: `You are an AI expert in analyzing concise restaurant review summaries. Your goal is to extract key information from the provided summary.
 
   Restaurant Name: {{restaurantName}}
-  Reviews: {{reviews}}
+  Review Summary: {{reviews}}
 
-  Analyze the reviews and extract the following information:
+  Analyze the review summary and extract the following information:
 
   - Overall Sentiment: Determine the overall sentiment towards the restaurant (positive, negative, or neutral).
   - Key Aspects:
