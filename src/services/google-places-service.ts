@@ -1,37 +1,23 @@
+
 // src/services/google-places-service.ts
 'use server';
 
 const GOOGLE_PLACES_API_KEY = process.env.GOOGLE_PLACES_API_KEY;
-const PLACES_API_BASE_URL = 'https://maps.googleapis.com/maps/api/place';
+const PLACES_API_LEGACY_BASE_URL = 'https://maps.googleapis.com/maps/api/place';
+const PLACES_API_TEXT_SEARCH_NEW_URL = 'https://places.googleapis.com/v1/places:searchText';
 
-interface Place {
+// Interface for Place Details (Legacy) - remains mostly the same
+interface LegacyPlaceDetails {
   place_id: string;
   name: string;
-  vicinity?: string; // Address or general area
+  vicinity?: string;
   rating?: number;
   user_ratings_total?: number;
   photos?: { photo_reference: string }[];
-}
-
-interface TextSearchResponseData {
-  results: Place[];
-  status: string;
-  error_message?: string;
-  next_page_token?: string;
-}
-
-interface PlaceDetailsResponseData {
-  result: PlaceDetails;
-  status: string;
-  error_message?: string;
-}
-
-interface PlaceDetails extends Place {
   formatted_address?: string;
   reviews?: PlaceReview[];
   website?: string;
   formatted_phone_number?: string;
-  // Add other details you might need
 }
 
 interface PlaceReview {
@@ -39,13 +25,35 @@ interface PlaceReview {
   rating: number;
   relative_time_description: string;
   text: string;
-  profile_photo_url?: string; // URL of the reviewer's profile photo
-  time?: number; // Timestamp of the review
+  profile_photo_url?: string;
+  time?: number;
+}
+
+interface PlaceDetailsResponseData {
+  result: LegacyPlaceDetails;
+  status: string;
+  error_message?: string;
 }
 
 
-export interface RestaurantSearchResult {
+// Interface for Text Search (New)
+interface NewPlace {
   id: string;
+  displayName?: { text: string; languageCode: string };
+  formattedAddress?: string;
+  rating?: number;
+  userRatingCount?: number;
+  // Other fields can be added based on FieldMask
+}
+
+interface TextSearchNewResponseData {
+  places?: NewPlace[];
+  // Errors are typically handled via HTTP status codes and an error object in the response body
+}
+
+// Output structures remain the same for the application
+export interface RestaurantSearchResult {
+  id: string; // This will be place.id from New API
   name: string;
   address?: string;
   rating?: number;
@@ -53,25 +61,24 @@ export interface RestaurantSearchResult {
 }
 
 export interface RestaurantDetails extends RestaurantSearchResult {
-  reviewsText?: string; // Combined text of some reviews
+  reviewsText?: string;
   photoUrl?: string;
-  // Potentially more fields like website, phone number
 }
 
-async function fetchFromApi<T>(url: string): Promise<T> {
+async function fetchFromLegacyApi<T>(url: string): Promise<T> {
   if (!GOOGLE_PLACES_API_KEY) {
     throw new Error('Google Places API key is not configured.');
   }
   const response = await fetch(url);
   if (!response.ok) {
     const errorBody = await response.text();
-    console.error(`Google Places API Error (${response.status}): ${errorBody}`);
-    throw new Error(`Google Places API request failed with status ${response.status}`);
+    console.error(`Google Places Legacy API Error (${response.status}): ${errorBody}`);
+    throw new Error(`Google Places Legacy API request failed with status ${response.status}`);
   }
   const data = await response.json();
   if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
-    console.error(`Google Places API Error (${data.status}): ${data.error_message}`);
-    throw new Error(data.error_message || `Google Places API returned status: ${data.status}`);
+    console.error(`Google Places Legacy API Error (${data.status}): ${data.error_message}`);
+    throw new Error(data.error_message || `Google Places Legacy API returned status: ${data.status}`);
   }
   return data as T;
 }
@@ -79,35 +86,75 @@ async function fetchFromApi<T>(url: string): Promise<T> {
 export async function findRestaurantsByCriteria(
   location: string,
   cuisine: string,
-  // Add other criteria like budget if the API supports it well for text search
 ): Promise<RestaurantSearchResult[]> {
-  const query = `${cuisine} restaurants in ${location}`;
-  const url = `${PLACES_API_BASE_URL}/textsearch/json?query=${encodeURIComponent(query)}&key=${GOOGLE_PLACES_API_KEY}&language=ja`;
+  if (!GOOGLE_PLACES_API_KEY) {
+    throw new Error('Google Places API key is not configured.');
+  }
+
+  const query = `${cuisine} restaurant in ${location}`;
+  // Define the fields you want to retrieve. This is crucial for the new API.
+  const fieldMask = 'places.id,places.displayName,places.formattedAddress,places.rating,places.userRatingCount';
 
   try {
-    const data = await fetchFromApi<TextSearchResponseData>(url);
-    if (data.status === 'ZERO_RESULTS' || !data.results) {
+    const response = await fetch(PLACES_API_TEXT_SEARCH_NEW_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': GOOGLE_PLACES_API_KEY,
+        'X-Goog-FieldMask': fieldMask,
+      },
+      body: JSON.stringify({
+        textQuery: query,
+        languageCode: 'ja', // Specify language
+        includedType: 'restaurant', // Specify type
+        maxResultCount: 10 // Optional: limit results
+      }),
+    });
+
+    if (!response.ok) {
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch (e) {
+        // If response is not JSON or empty
+        throw new Error(`Google Places API (New) request failed with status ${response.status}`);
+      }
+      console.error('Google Places API (New) Error:', errorData);
+      throw new Error(errorData?.error?.message || `Google Places API (New) request failed with status ${response.status}`);
+    }
+
+    const data: TextSearchNewResponseData = await response.json();
+
+    if (!data.places || data.places.length === 0) {
       return [];
     }
-    return data.results.map(place => ({
-      id: place.place_id,
-      name: place.name,
-      address: place.vicinity,
+
+    return data.places.map(place => ({
+      id: place.id,
+      name: place.displayName?.text || '名前なし',
+      address: place.formattedAddress,
       rating: place.rating,
-      userRatingsTotal: place.user_ratings_total,
+      userRatingsTotal: place.userRatingCount,
     }));
+
   } catch (error) {
-    console.error("Error in findRestaurantsByCriteria:", error);
-    throw error; // Re-throw to be handled by the caller
+    console.error("Error in findRestaurantsByCriteria (New API):", error);
+    // Ensure the re-thrown error is an Error instance
+    if (error instanceof Error) {
+        throw error;
+    }
+    throw new Error(String(error));
   }
 }
 
 export async function getRestaurantDetails(placeId: string): Promise<RestaurantDetails | null> {
+  // Place Details API (Legacy) is still used here.
+  // The 'placeId' from Text Search (New) is compatible.
   const fields = 'place_id,name,vicinity,rating,user_ratings_total,reviews,photos,formatted_address,website,formatted_phone_number';
-  const url = `${PLACES_API_BASE_URL}/details/json?place_id=${placeId}&fields=${fields}&key=${GOOGLE_PLACES_API_KEY}&language=ja`;
+  const url = `${PLACES_API_LEGACY_BASE_URL}/details/json?place_id=${placeId}&fields=${fields}&key=${GOOGLE_PLACES_API_KEY}&language=ja`;
 
   try {
-    const data = await fetchFromApi<PlaceDetailsResponseData>(url);
+    const data = await fetchFromLegacyApi<PlaceDetailsResponseData>(url);
     if (data.status === 'ZERO_RESULTS' || !data.result) {
       return null;
     }
@@ -117,21 +164,23 @@ export async function getRestaurantDetails(placeId: string): Promise<RestaurantD
     let photoUrl: string | undefined = undefined;
     if (place.photos && place.photos.length > 0 && GOOGLE_PLACES_API_KEY) {
       const photoReference = place.photos[0].photo_reference;
-      photoUrl = `${PLACES_API_BASE_URL}/photo?maxwidth=600&photoreference=${photoReference}&key=${GOOGLE_PLACES_API_KEY}`;
+      photoUrl = `${PLACES_API_LEGACY_BASE_URL}/photo?maxwidth=600&photoreference=${photoReference}&key=${GOOGLE_PLACES_API_KEY}`;
     }
 
     return {
-      id: place.place_id,
+      id: place.place_id, // Place Details (Legacy) returns place_id
       name: place.name,
       address: place.formatted_address || place.vicinity,
       rating: place.rating,
       userRatingsTotal: place.user_ratings_total,
       reviewsText: reviewsText,
       photoUrl: photoUrl,
-      // Map other details as needed
     };
   } catch (error) {
     console.error(`Error in getRestaurantDetails for placeId ${placeId}:`, error);
-    throw error; // Re-throw to be handled by the caller
+    if (error instanceof Error) {
+        throw error;
+    }
+    throw new Error(String(error));
   }
 }
