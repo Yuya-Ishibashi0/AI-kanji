@@ -14,25 +14,19 @@ import { useState, useEffect } from "react";
 interface RestaurantInfoCardProps {
   suggestion: SuggestRestaurantsOutput;
   analysis: AnalyzeRestaurantReviewsOutput;
+  photoUrl?: string;
 }
 
-export default function RestaurantInfoCard({ suggestion, analysis }: RestaurantInfoCardProps) {
+export default function RestaurantInfoCard({ suggestion, analysis, photoUrl }: RestaurantInfoCardProps) {
   const { toast } = useToast();
   const [availabilityStatus, setAvailabilityStatus] = useState<string | null>(null);
   const [bookingStatus, setBookingStatus] = useState<string | null>(null);
   const [isBooking, setIsBooking] = useState(false);
   
-  // Placeholder image logic
-  const [imageSeed, setImageSeed] = useState('');
-  useEffect(() => {
-    setImageSeed(Math.random().toString(36).substring(7));
-  }, [suggestion.restaurantName]);
-
-
   const handleCheckAvailability = () => {
     setAvailabilityStatus("空席を確認中...");
     setTimeout(() => {
-      const isAvailable = Math.random() > 0.3; // Mock availability
+      const isAvailable = Math.random() > 0.3; 
       if (isAvailable) {
         setAvailabilityStatus("空席あり！予約に進めます。");
         toast({ title: "空席情報", description: "空席が見つかりました！" });
@@ -48,7 +42,7 @@ export default function RestaurantInfoCard({ suggestion, analysis }: RestaurantI
     setBookingStatus("予約処理中...");
     toast({ title: "予約処理", description: "予約手続きを開始しました..." });
     setTimeout(() => {
-      const isBooked = Math.random() > 0.2; // Mock booking success
+      const isBooked = Math.random() > 0.2; 
       if (isBooked) {
         const reservationId = `AI-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
         setBookingStatus(`予約完了！ 予約ID: ${reservationId}`);
@@ -79,13 +73,23 @@ export default function RestaurantInfoCard({ suggestion, analysis }: RestaurantI
       
       <CardContent className="space-y-6">
         <div className="aspect-video bg-muted rounded-md overflow-hidden relative">
-          <Image 
-            src={`https://placehold.co/600x400.png?seed=${imageSeed}`} 
-            alt={suggestion.restaurantName} 
-            layout="fill"
-            objectFit="cover"
-            data-ai-hint="restaurant food"
-          />
+          {photoUrl ? (
+             <Image 
+              src={photoUrl}
+              alt={suggestion.restaurantName} 
+              layout="fill"
+              objectFit="cover"
+              priority
+            />
+          ) : (
+            <Image 
+              src="https://placehold.co/600x400.png" 
+              alt={suggestion.restaurantName + " placeholder image"}
+              layout="fill"
+              objectFit="cover"
+              data-ai-hint="restaurant food"
+            />
+          )}
         </div>
 
         <div>

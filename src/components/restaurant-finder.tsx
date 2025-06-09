@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -245,7 +246,8 @@ export default function RestaurantFinder() {
         <div className="space-y-8">
           <RestaurantInfoCard 
             suggestion={recommendation.suggestion} 
-            analysis={recommendation.analysis} 
+            analysis={recommendation.analysis}
+            photoUrl={recommendation.photoUrl}
           />
           <PreferenceDisplayCard criteria={recommendation.criteria} />
            <Button variant="outline" onClick={() => setRecommendation(null)} className="w-full">
