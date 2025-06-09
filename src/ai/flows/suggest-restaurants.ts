@@ -22,8 +22,8 @@ const SuggestRestaurantsInputSchema = z.object({
 export type SuggestRestaurantsInput = z.infer<typeof SuggestRestaurantsInputSchema>;
 
 const SuggestRestaurantsOutputSchema = z.object({
-  restaurantName: z.string().describe('The name of the recommended restaurant.'),
-  recommendationRationale: z.string().describe('The detailed explanation of why the restaurant is recommended based on the analyzed reviews and criteria.'),
+  restaurantName: z.string().describe('おすすめのレストラン名。'),
+  recommendationRationale: z.string().describe('分析されたレビューと基準に基づいてレストランをおすすめする理由の詳細な説明（日本語で記述）。'),
 });
 export type SuggestRestaurantsOutput = z.infer<typeof SuggestRestaurantsOutputSchema>;
 
@@ -35,19 +35,19 @@ const prompt = ai.definePrompt({
   name: 'suggestRestaurantsPrompt',
   input: {schema: SuggestRestaurantsInputSchema},
   output: {schema: SuggestRestaurantsOutputSchema},
-  prompt: `You are a restaurant recommendation expert. Given the following criteria and restaurant review analysis, suggest a restaurant and explain your recommendation.
+  prompt: `あなたはレストラン推薦のエキスパートです。以下の基準とレストランのレビュー分析を考慮して、レストランを提案し、その推薦理由を説明してください。
 
-Criteria:
-Date: {{{date}}}
-Time: {{{time}}}
-Budget: {{{budget}}}
-Cuisine: {{{cuisine}}}
-Location: {{{location}}}
+基準:
+日付: {{{date}}}
+時間: {{{time}}}
+予算: {{{budget}}}
+料理の種類: {{{cuisine}}}
+場所: {{{location}}}
 
-Review Analysis:
+レビュー分析:
 {{{reviewAnalysis}}}
 
-Based on these criteria and the review analysis, suggest a restaurant and explain your reasoning.`,
+これらの基準とレビュー分析に基づいて、レストランを提案し、その推薦理由を日本語で詳しく説明してください。`,
 });
 
 const suggestRestaurantsFlow = ai.defineFlow(
@@ -61,3 +61,4 @@ const suggestRestaurantsFlow = ai.defineFlow(
     return output!;
   }
 );
+
