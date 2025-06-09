@@ -1,4 +1,4 @@
-import type { RestaurantCriteria } from "@/app/actions";
+import type { RestaurantCriteria } from "@/lib/schemas";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CalendarDays, Clock, DollarSign, MapPin, Utensils } from "lucide-react";
 
