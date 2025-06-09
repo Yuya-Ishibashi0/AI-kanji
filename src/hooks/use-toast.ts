@@ -9,7 +9,9 @@ import type {
 } from "@/components/ui/toast"
 
 const TOAST_LIMIT = 1
-const TOAST_REMOVE_DELAY = 1000000
+// Toasts were lingering for over 15 minutes due to an excessive delay.
+// Ten seconds is ample time for users to read the message.
+const TOAST_REMOVE_DELAY = 10000
 
 type ToasterToast = ToastProps & {
   id: string
