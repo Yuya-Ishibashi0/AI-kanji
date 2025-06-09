@@ -1,6 +1,8 @@
 "use server";
 import type { AnalyzeRestaurantReviewsOutput } from "@/ai/flows/analyze-restaurant-reviews";
+import { analyzeRestaurantReviews } from "@/ai/flows/analyze-restaurant-reviews";
 import type { SuggestRestaurantsOutput } from "@/ai/flows/suggest-restaurants";
+import { suggestRestaurants } from "@/ai/flows/suggest-restaurants";
 import { type RestaurantCriteria } from "@/lib/schemas";
 
 export interface RecommendationResult {
@@ -67,3 +69,4 @@ export async function getRestaurantSuggestion(
     return { error: `AIの処理中にエラーが発生しました: ${errorMessage}` };
   }
 }
+
