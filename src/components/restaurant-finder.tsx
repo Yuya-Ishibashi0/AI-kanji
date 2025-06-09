@@ -4,7 +4,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CalendarIcon, ChefHat, Clock, DollarSign, Loader2, MapPin, Search, Wand2 } from "lucide-react";
 import { useForm, Controller, type SubmitHandler } from "react-hook-form";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
 
@@ -42,13 +42,18 @@ export default function RestaurantFinder() {
   const form = useForm<RestaurantCriteria>({
     resolver: zodResolver(RestaurantCriteriaSchema),
     defaultValues: {
-      date: new Date(),
+      date: undefined, // ← ここを変更
       time: "19:00",
       budget: "5,000円～8,000円",
       cuisine: "",
       location: "",
     },
   });
+
+  useEffect(() => {
+    // このコードはブラウザ（クライアント）でのみ実行されます
+    form.setValue("date", new Date());
+  }, [form]);
 
   const onSubmit: SubmitHandler<RestaurantCriteria> = async (data) => {
     setIsLoading(true);
