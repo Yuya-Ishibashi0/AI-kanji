@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { AnalyzeRestaurantReviewsOutput } from "@/ai/flows/analyze-restaurant-reviews";
@@ -106,7 +107,7 @@ export default function RestaurantInfoCard({ suggestion, analysis }: RestaurantI
             <Sparkles className="mr-2 h-5 w-5 text-accent" />
             おすすめ理由
           </h3>
-          <p className="text-sm bg-accent/10 p-4 rounded-md text-accent-foreground">{suggestion.recommendationRationale}</p>
+          <p className="text-sm bg-accent/10 p-4 rounded-md text-foreground">{suggestion.recommendationRationale}</p>
         </div>
 
         <Separator />
