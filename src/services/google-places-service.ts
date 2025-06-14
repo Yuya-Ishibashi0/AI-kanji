@@ -149,39 +149,62 @@ export async function findRestaurantsByCriteria(
 
 
 export async function getRestaurantDetails(placeId: string): Promise<RestaurantDetails | null> {
-  // Place Details API (Legacy) is still used here.
-  // The 'placeId' from Text Search (New) is compatible.
-  const fields = 'place_id,name,vicinity,rating,user_ratings_total,reviews,photos,formatted_address,website,formatted_phone_number';
-  const url = `${PLACES_API_LEGACY_BASE_URL}/details/json?place_id=${placeId}&fields=${fields}&key=${GOOGLE_PLACES_API_KEY}&language=ja`;
+  // New APIで取得したいフィールドをfieldMaskとして指定
+  const fieldMask = 'id,displayName,formattedAddress,rating,userRatingCount,reviews,photos,websiteUri,nationalPhoneNumber';
+  const url = `https://places.googleapis.com/v1/places/${placeId}`;
+
+  if (!GOOGLE_PLACES_API_KEY) {
+    throw new Error('Google Places API key is not configured.');
+  }
 
   try {
-    const data = await fetchFromLegacyApi<PlaceDetailsResponseData>(url);
-    if (data.status === 'ZERO_RESULTS' || !data.result) {
+    // New APIでは、キーやフィールドマスクをヘッダーで渡すのが一般的
+    const response = await fetch(url, {
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': GOOGLE_PLACES_API_KEY,
+        'X-Goog-FieldMask': fieldMask
+      }
+    });
+
+    if (!response.ok) {
+      let errorData;
+      try {
+          errorData = await response.json();
+      } catch (e) {
+          throw new Error(`Google Places API (Place Details New) request failed with status ${response.status}`);
+      }
+      console.error('Google Places API (Place Details New) Error:', errorData);
+      throw new Error(errorData?.error?.message || `Google Places API (Place Details New) request failed with status ${response.status}`);
+  }
+    const place = await response.json();
+
+    if (!place) {
       return null;
     }
-    const place = data.result;
-    const reviewsText = place.reviews?.slice(0, 3).map(r => r.text).join('\n\n---\n\n') || 'レビュー情報なし';
+    
+    // レビューテキストを抽出（New APIのレスポンス構造に合わせる）
+    const reviewsText = place.reviews?.slice(0, 5).map((r: any) => r.text?.text).join('\n\n---\n\n') || 'レビュー情報なし';
     
     let photoUrl: string | undefined = undefined;
     if (place.photos && place.photos.length > 0 && GOOGLE_PLACES_API_KEY) {
-      const photoReference = place.photos[0].photo_reference;
-      photoUrl = `${PLACES_API_LEGACY_BASE_URL}/photo?maxwidth=600&photoreference=${photoReference}&key=${GOOGLE_PLACES_API_KEY}`;
+      // New APIの写真URL取得方法は少し異なる場合があるため要確認
+      const photoReference = place.photos[0].name; // 例: "places/{place_id}/photos/{photo_resource_name}"
+      // 正しい写真URLの構築方法はドキュメントを参照
+      photoUrl = `https://places.googleapis.com/v1/${photoReference}/media?maxHeightPx=600&key=${GOOGLE_PLACES_API_KEY}`;
     }
 
     return {
-      id: place.place_id, // Place Details (Legacy) returns place_id
-      name: place.name,
-      address: place.formatted_address || place.vicinity,
+      id: place.id,
+      name: place.displayName?.text || '名前なし',
+      address: place.formattedAddress,
       rating: place.rating,
-      userRatingsTotal: place.user_ratings_total,
+      userRatingsTotal: place.userRatingCount,
       reviewsText: reviewsText,
       photoUrl: photoUrl,
     };
   } catch (error) {
     console.error(`Error in getRestaurantDetails for placeId ${placeId}:`, error);
-    if (error instanceof Error) {
-        throw error;
-    }
-    throw new Error(String(error));
+    throw error;
   }
 }
