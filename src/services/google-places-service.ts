@@ -147,6 +147,7 @@ export async function findRestaurantsByCriteria(
   }
 }
 
+
 export async function getRestaurantDetails(placeId: string): Promise<RestaurantDetails | null> {
   // Place Details API (Legacy) is still used here.
   // The 'placeId' from Text Search (New) is compatible.
