@@ -74,6 +74,6 @@ ${JSON.stringify(input.candidates, null, 2)}
     });
 
     // AIからの出力を返す（nullの場合は空の配列を返す）
-    return llmResponse.output() || [];
+    return llmResponse.output || [];
   }
 );
