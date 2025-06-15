@@ -1,9 +1,8 @@
-
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CalendarIcon, ChefHat, Clock, DollarSign, Loader2, MapPin, Search, Wand2 } from "lucide-react";
-import { useForm, Controller, type SubmitHandler } from "react-hook-form";
+import { useForm, type SubmitHandler } from "react-hook-form";
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
@@ -35,14 +34,15 @@ const budgetOptions = [
 
 export default function RestaurantFinder() {
   const [isLoading, setIsLoading] = useState(false);
-  const [recommendation, setRecommendation] = useState<RecommendationResult | null>(null);
+  // ▼▼▼ stateの型をオブジェクトの配列に変更 ▼▼▼
+  const [recommendations, setRecommendations] = useState<RecommendationResult[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   const form = useForm<RestaurantCriteria>({
     resolver: zodResolver(RestaurantCriteriaSchema),
     defaultValues: {
-      date: undefined, // ← ここを変更
+      date: undefined,
       time: "19:00",
       budget: "5,000円～8,000円",
       cuisine: "",
@@ -51,22 +51,22 @@ export default function RestaurantFinder() {
   });
 
   useEffect(() => {
-    // このコードはブラウザ（クライアント）でのみ実行されます
     form.setValue("date", new Date());
   }, [form]);
 
   const onSubmit: SubmitHandler<RestaurantCriteria> = async (data) => {
     setIsLoading(true);
     setError(null);
-    setRecommendation(null);
+    setRecommendations(null);
 
     const result = await getRestaurantSuggestion(data);
 
-    if (result.data) {
-      setRecommendation(result.data);
+    // ▼▼▼ レスポンスデータ(配列)の処理を修正 ▼▼▼
+    if (result.data && result.data.length > 0) {
+      setRecommendations(result.data);
       toast({
         title: "お店が見つかりました！",
-        description: `${result.data.suggestion.restaurantName} を提案します。`,
+        description: `${result.data.length}件のおすすめ候補を提案します。`,
       });
     } else if (result.error) {
       setError(result.error);
@@ -74,6 +74,14 @@ export default function RestaurantFinder() {
         title: "エラー",
         description: result.error,
         variant: "destructive",
+      });
+    } else {
+      // データもエラーも無い場合 (念のため)
+      setError("AIがお気に入りのお店を見つけられませんでした。条件を変えて再度お試しください。");
+      toast({
+          title: "検索結果なし",
+          description: "条件に合うお店が見つかりませんでした。",
+          variant: "destructive",
       });
     }
     setIsLoading(false);
@@ -92,6 +100,7 @@ export default function RestaurantFinder() {
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              {/* --- フォーム部分は変更なし --- */}
               <FormField
                 control={form.control}
                 name="date"
@@ -247,15 +256,19 @@ export default function RestaurantFinder() {
         </Card>
       )}
 
-      {recommendation && !isLoading && !error && (
+      {/* ▼▼▼ 推薦結果(配列)をループして表示するよう修正 ▼▼▼ */}
+      {recommendations && !isLoading && !error && (
         <div className="space-y-8">
-          <RestaurantInfoCard 
-            suggestion={recommendation.suggestion} 
-            analysis={recommendation.analysis}
-            photoUrl={recommendation.photoUrl}
-          />
-          <PreferenceDisplayCard criteria={recommendation.criteria} />
-           <Button variant="outline" onClick={() => setRecommendation(null)} className="w-full">
+          {recommendations.map((rec) => (
+            <RestaurantInfoCard 
+              key={rec.placeId} // ユニークなキーとしてplaceIdを使用
+              suggestion={rec.suggestion} 
+              analysis={rec.analysis}
+              photoUrl={rec.photoUrl}
+            />
+          ))}
+          <PreferenceDisplayCard criteria={recommendations[0].criteria} />
+           <Button variant="outline" onClick={() => setRecommendations(null)} className="w-full">
             別の条件で検索する
           </Button>
         </div>

@@ -1,41 +1,42 @@
-
 'use server';
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { RestaurantCriteriaSchema, AnalyzeRestaurantReviewsOutputSchema, SuggestRestaurantsOutputSchema } from '@/lib/schemas'; // Import from centralized location
+import { RestaurantCriteriaSchema, AnalyzeRestaurantReviewsOutputSchema, SuggestRestaurantsOutputSchema } from '@/lib/schemas';
 
 
 /**
- * 最終的にフロントエンドに返す結果の型スキーマ
- * 複数のコンポーネントで利用されるため、ここで一元管理するのが望ましい
+ * 最終的にフロントエンドに返す、レストラン1件あたりの推薦結果の型スキーマ
  */
-const FinalRecommendationSchema = z.object({
+const SingleRecommendationSchema = z.object({
   suggestion: SuggestRestaurantsOutputSchema,
   analysis: AnalyzeRestaurantReviewsOutputSchema,
-  criteria: RestaurantCriteriaSchema,
-  photoUrl: z.string().optional().describe("選定したレストランの写真URL"),
+  // criteria と photoUrl は後から追加するため、ここでは含めない
 });
-export type FinalRecommendation = z.infer<typeof FinalRecommendationSchema>;
+
+/**
+ * このAIフローの最終的な出力形式。推薦結果の配列となる。
+ */
+const FinalOutputSchema = z.array(SingleRecommendationSchema);
+export type FinalOutput = z.infer<typeof FinalOutputSchema>;
+
 
 /**
  * このAIフローへの入力の型スキーマ
- * 複数のレストラン候補とユーザーの希望条件を含む
  */
 const SelectAndAnalyzeInputSchema = z.object({
-  // any型ではなく、getRestaurantDetailsの返り値の型（RestaurantDetails）を
-  // zodスキーマで定義して使うのがより堅牢です。
-  candidates: z.array(z.any()).describe("Place Details APIから取得したレストラン詳細情報の配列"),
+  // anyの代わりに、より具体的な型を定義することが望ましい
+  candidates: z.array(z.any()).describe("Place Details APIから取得したレストラン詳細情報の配列（写真URLは含まない）"),
   criteria: RestaurantCriteriaSchema.describe("ユーザーが入力した希望条件"),
 });
 
 /**
- * 複数の候補から最適な1件を選び、そのレビュー分析と推薦文を生成するAIフロー
+ * 複数の候補から最適なものを【3件】選び、それぞれレビュー分析と推薦文を生成するAIフロー
  */
-export const selectAndAnalyzeBestRestaurant = ai.defineFlow(
+export const selectAndAnalyzeBestRestaurants = ai.defineFlow(
   {
-    name: 'selectAndAnalyzeBestRestaurantFlow',
+    name: 'selectAndAnalyzeBestRestaurantsFlow', // フロー名を複数形に
     inputSchema: SelectAndAnalyzeInputSchema,
-    outputSchema: FinalRecommendationSchema,
+    outputSchema: FinalOutputSchema, // 出力スキーマを配列に変更
   },
   async (input) => {
 
@@ -45,41 +46,33 @@ export const selectAndAnalyzeBestRestaurant = ai.defineFlow(
 # ユーザー希望条件
 ${JSON.stringify(input.criteria, null, 2)}
 
-# レストラン候補リスト (各候補には name, reviewsText, photoUrl などの詳細情報が含まれています)
+# レストラン候補リスト
 ${JSON.stringify(input.candidates, null, 2)}
 
 # あなたのタスク
-1.  **レストランの選定**: 提供された「レストラン候補リスト」の中から、「ユーザー希望条件」に最も合致する**最高のレストランを1つだけ**選んでください。
-2.  **出力JSONの生成**: あなたが選んだその1つのレストランの情報を基に、以下の指示に従ってJSONオブジェクトを生成してください。
-    *   \`suggestion\` オブジェクト内:
-        *   \`restaurantName\` フィールドには、選定したレストランの**名前 (name プロパティ)** を正確に含めてください。
-        *   \`recommendationRationale\` フィールドには、そのレストランがユーザーの希望に最適な理由を具体的に説明する推薦文（日本語）を作成してください。
-    *   \`analysis\` オブジェクト内 (選定したレストランのレビュー分析結果):
-        *   \`overallSentiment\`: 全体的な感情。
-        *   \`keyAspects\` (food, service, ambiance): 各側面に関する感情と詳細。
-        *   \`groupDiningExperience\`: グループ利用に関する言及。
-    *   \`photoUrl\` フィールドには、選定したレストランの**写真URL (photoUrl プロパティ)** を含めてください。候補に \`photoUrl\` がない場合は、このフィールドを省略するか \`null\` に設定してください。
-    *   \`criteria\` フィールドには、入力された「ユーザー希望条件」オブジェクトをそのまま含めてください。
+1.  **レストランの選定**: 候補リストの中から、ユーザーの希望条件に最も合致するレストランを【上位3件】、順位付けして選んでください。
+2.  **出力JSONの生成**: 選んだ3件それぞれについて、以下の指示に従ってJSONオブジェクトを生成し、それらを配列にまとめてください。
+    * 各オブジェクトは \`suggestion\` と \`analysis\` の2つのプロパティを持つ必要があります。
+    * \`suggestion.restaurantName\` には、選定したレストランの**名前 (name プロパティ)** を正確に含めてください。
+    * \`suggestion.recommendationRationale\` には、そのレストランがなぜおすすめなのか、具体的な推薦文（日本語）を作成してください。
+    * \`analysis\` オブジェクトには、選定したレストランのレビュー分析結果を格納してください。
 
 # 出力形式
-必ず指示されたJSONスキーマ（FinalRecommendationSchema）に従い、上記の指示内容を反映したJSONオブジェクトを生成してください。特に \`suggestion.restaurantName\` と \`photoUrl\` は、選定した候補の情報から正確に引用してください。
+必ず指示されたJSONスキーマ（FinalOutputSchema）に従い、【3件分のオブジェクトを持つ配列】として出力してください。
 `;
     
     // AIにプロンプトと期待する出力形式を渡して実行
     const llmResponse = await ai.generate({
       prompt: prompt,
-      // 長いコンテキストを扱い、JSON出力が得意なモデルを選択するのが望ましい
-      model: 'googleai/gemini-1.5-flash', 
+      model: 'googleai/gemini-1.5-flash',
       output: {
         format: 'json',
-        schema: FinalRecommendationSchema, // 出力スキーマを厳密に指定
+        schema: FinalOutputSchema, // 出力スキーマを配列形式に指定
       },
-      // 創造性よりも一貫性を重視するため、temperatureを低めに設定
-      config: { temperature: 0.1 }, 
+      config: { temperature: 0.2 },
     });
 
-    // AIからの出力を返す（nullの場合は空のオブジェクトを返すなどのフォールバックも検討）
-    return llmResponse.output()!;
+    // AIからの出力を返す（nullの場合は空の配列を返す）
+    return llmResponse.output() || [];
   }
 );
-
