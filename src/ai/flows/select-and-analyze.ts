@@ -76,7 +76,7 @@ export const selectAndAnalyzeBestRestaurants = ai.defineFlow(
 # ユーザー希望条件
 ${JSON.stringify(input.criteria, null, 2)}
 
-# レストラン候補リスト (各候補のレビュー(reviewsText プロパティ内のテキスト)も参考にしてください)
+# レストラン候補リスト (各候補のレビュー(reviewsText プロパティ内のテキスト snippet)も参考にしてください)
 ${JSON.stringify(input.candidates.map(c => ({ id: c.id, name: c.name, rating: c.rating, reviewsTextSnippet: c.reviewsText ? c.reviewsText.substring(0, 200) + '...' : 'レビューなし' })), null, 2)}
 
 # あなたのタスク
