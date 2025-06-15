@@ -11,46 +11,21 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import { AnalyzeRestaurantReviewsOutputSchema } from '@/lib/schemas'; // Import from centralized location
 
 // Input schema now expects a single string of reviews (e.g., a summary)
 const AnalyzeRestaurantReviewsInputSchema = z.object({
   restaurantName: z.string().describe('The name of the restaurant to analyze.'),
-  reviews: z.string().describe('A summary of reviews for the restaurant.'),
+  reviews: z.string().describe('A summary of reviews for the restaurant. This might be a concatenation of multiple reviews.'),
 });
 export type AnalyzeRestaurantReviewsInput = z.infer<
   typeof AnalyzeRestaurantReviewsInputSchema
 >;
 
-// src/ai/flows/analyze-restaurant-reviews.ts
-
-const AnalyzeRestaurantReviewsOutputSchema = z.object({
-  overallSentiment: z
-    .string()
-    .describe('レストランに対する全体的な感情（例：高評価、賛否両論、不評など）。日本語で記述してください。'),
-  keyAspects:
-    z.object({
-      food: z
-        .string()
-        .describe('料理に関する感情と具体的な言及（例：「ピザが特に好評」「値段の割に味は普通」など）。日本語で記述してください。'),
-      service:
-        z.string().describe('サービスに関する感情と具体的な言及（例：「店員の対応が丁寧」「提供が遅い」など）。日本語で記述してください。'),
-      ambiance: z
-        .string()
-        .describe('雰囲気に関する感情と具体的な言及（例：「個室があり落ち着ける」「店内は活気がある」など）。日本語で記述してください。'),
-    })
-    .describe('レストランの主要な側面とその感情。'),
-  groupDiningExperience:
-    z
-      .string()
-      .describe(
-        'グループでの食事体験、グループ利用への適性に関する言及（例：「大人数での予約がしやすい」「宴会には不向き」など）。日本語で記述してください。'
-      ),
-});
+// Type is still exported for usage
 export type AnalyzeRestaurantReviewsOutput = z.infer<
   typeof AnalyzeRestaurantReviewsOutputSchema
 >;
-
-// ... (export type AnalyzeRestaurantReviewsInput は変更なし)
 
 export async function analyzeRestaurantReviews(
   input: AnalyzeRestaurantReviewsInput
@@ -61,7 +36,7 @@ export async function analyzeRestaurantReviews(
 const analyzeRestaurantReviewsPrompt = ai.definePrompt({
   name: 'analyzeRestaurantReviewsPrompt',
   input: {schema: AnalyzeRestaurantReviewsInputSchema},
-  output: {schema: AnalyzeRestaurantReviewsOutputSchema},
+  output: {schema: AnalyzeRestaurantReviewsOutputSchema}, // Use the imported schema
   prompt: `あなたはレストランのレビュー要約を分析するAIエキスパートです。あなたの目標は、提供された情報から重要な洞察を日本語で抽出することです。
 
   レストラン名: {{restaurantName}}
@@ -83,7 +58,7 @@ const analyzeRestaurantReviewsFlow = ai.defineFlow(
   {
     name: 'analyzeRestaurantReviewsFlow',
     inputSchema: AnalyzeRestaurantReviewsInputSchema,
-    outputSchema: AnalyzeRestaurantReviewsOutputSchema,
+    outputSchema: AnalyzeRestaurantReviewsOutputSchema, // Use the imported schema
   },
   async input => {
     const {output} = await analyzeRestaurantReviewsPrompt(input);
