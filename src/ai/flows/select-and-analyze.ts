@@ -45,15 +45,24 @@ export const selectAndAnalyzeBestRestaurant = ai.defineFlow(
 # ユーザー希望条件
 ${JSON.stringify(input.criteria, null, 2)}
 
-# レストラン候補リスト
+# レストラン候補リスト (各候補には name, reviewsText, photoUrl などの詳細情報が含まれています)
 ${JSON.stringify(input.candidates, null, 2)}
 
 # あなたのタスク
-1.  **レストランの選定**: 候補リストの中から、ユーザーの希望条件（特に予算、場所、料理の種類、利用シーン）に最も合致する**最高のレストランを1つだけ**選んでください。
-2.  **分析と推薦文の生成**: あなたが選んだそのレストランについてのみ、以下のJSON形式で、レビューの分析と、なぜそのレストランが最適なのかを説明する推薦文を生成してください。
+1.  **レストランの選定**: 提供された「レストラン候補リスト」の中から、「ユーザー希望条件」に最も合致する**最高のレストランを1つだけ**選んでください。
+2.  **出力JSONの生成**: あなたが選んだその1つのレストランの情報を基に、以下の指示に従ってJSONオブジェクトを生成してください。
+    *   \`suggestion\` オブジェクト内:
+        *   \`restaurantName\` フィールドには、選定したレストランの**名前 (name プロパティ)** を正確に含めてください。
+        *   \`recommendationRationale\` フィールドには、そのレストランがユーザーの希望に最適な理由を具体的に説明する推薦文（日本語）を作成してください。
+    *   \`analysis\` オブジェクト内 (選定したレストランのレビュー分析結果):
+        *   \`overallSentiment\`: 全体的な感情。
+        *   \`keyAspects\` (food, service, ambiance): 各側面に関する感情と詳細。
+        *   \`groupDiningExperience\`: グループ利用に関する言及。
+    *   \`photoUrl\` フィールドには、選定したレストランの**写真URL (photoUrl プロパティ)** を含めてください。候補に \`photoUrl\` がない場合は、このフィールドを省略するか \`null\` に設定してください。
+    *   \`criteria\` フィールドには、入力された「ユーザー希望条件」オブジェクトをそのまま含めてください。
 
 # 出力形式
-必ず以下のJSONスキーマに従って、分析結果と推薦文を出力してください。
+必ず指示されたJSONスキーマ（FinalRecommendationSchema）に従い、上記の指示内容を反映したJSONオブジェクトを生成してください。特に \`suggestion.restaurantName\` と \`photoUrl\` は、選定した候補の情報から正確に引用してください。
 `;
     
     // AIにプロンプトと期待する出力形式を渡して実行
@@ -66,10 +75,11 @@ ${JSON.stringify(input.candidates, null, 2)}
         schema: FinalRecommendationSchema, // 出力スキーマを厳密に指定
       },
       // 創造性よりも一貫性を重視するため、temperatureを低めに設定
-      config: { temperature: 0.2 }, 
+      config: { temperature: 0.1 }, 
     });
 
     // AIからの出力を返す（nullの場合は空のオブジェクトを返すなどのフォールバックも検討）
     return llmResponse.output()!;
   }
 );
+
