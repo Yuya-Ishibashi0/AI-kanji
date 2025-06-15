@@ -51,4 +51,3 @@ export const SuggestRestaurantsOutputSchema = z.object({
   recommendationRationale: z.string().describe('分析されたレビューと基準に基づいてレストランをおすすめする理由の詳細な説明（日本語で記述）。'),
 });
 export type SuggestRestaurantsOutput = z.infer<typeof SuggestRestaurantsOutputSchema>;
-
