@@ -10,7 +10,8 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { RestaurantCriteriaSchema } from '@/lib/schemas';
+// Import the version of RestaurantCriteriaSchema that expects date as string
+import { RestaurantCriteriaSchema as RestaurantCriteriaStringDateSchema } from '@/lib/schemas';
 
 // Schema for individual restaurant candidate input
 const RestaurantCandidateSchema = z.object({
@@ -22,7 +23,7 @@ const RestaurantCandidateSchema = z.object({
 // Schema objects are NOT exported
 const FilterRestaurantsInputSchema = z.object({
   restaurants: z.array(RestaurantCandidateSchema).describe('A list of restaurant candidates to filter.'),
-  criteria: RestaurantCriteriaSchema.describe('The user\'s dining criteria.'),
+  criteria: RestaurantCriteriaStringDateSchema.describe("The user's dining criteria, with date as a string."),
 });
 export type FilterRestaurantsInput = z.infer<typeof FilterRestaurantsInputSchema>;
 

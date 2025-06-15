@@ -1,7 +1,8 @@
 'use server';
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { RestaurantCriteriaSchema, AnalyzeRestaurantReviewsOutputSchema, SuggestRestaurantsOutputSchema } from '@/lib/schemas';
+// Import the version of RestaurantCriteriaSchema that expects date as string
+import { RestaurantCriteriaSchema as RestaurantCriteriaStringDateSchema, AnalyzeRestaurantReviewsOutputSchema, SuggestRestaurantsOutputSchema } from '@/lib/schemas';
 
 
 /**
@@ -26,7 +27,7 @@ export type FinalOutput = z.infer<typeof FinalOutputSchema>;
 const SelectAndAnalyzeInputSchema = z.object({
   // anyの代わりに、より具体的な型を定義することが望ましい
   candidates: z.array(z.any()).describe("Place Details APIから取得したレストラン詳細情報の配列（写真URLは含まない）"),
-  criteria: RestaurantCriteriaSchema.describe("ユーザーが入力した希望条件"),
+  criteria: RestaurantCriteriaStringDateSchema.describe("ユーザーが入力した希望条件, with date as string"),
 });
 
 /**

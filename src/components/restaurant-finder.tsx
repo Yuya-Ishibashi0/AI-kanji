@@ -6,6 +6,7 @@ import { useForm, type SubmitHandler } from "react-hook-form";
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
+import { z } from "zod"; // Added import for z
 
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -16,7 +17,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { getRestaurantSuggestion, type RecommendationResult } from "@/app/actions";
-import { RestaurantCriteriaSchema, type RestaurantCriteria } from "@/lib/schemas";
+// Import the original schema for form validation (which expects Date object)
+import { RestaurantCriteriaSchema as RestaurantCriteriaFormSchema, type RestaurantCriteria as RestaurantCriteriaType } from "@/lib/schemas";
 import RestaurantInfoCard from "./restaurant-info-card";
 import PreferenceDisplayCard from "./preference-display-card";
 import { useToast } from "@/hooks/use-toast";
@@ -34,15 +36,20 @@ const budgetOptions = [
 
 export default function RestaurantFinder() {
   const [isLoading, setIsLoading] = useState(false);
-  // ▼▼▼ stateの型をオブジェクトの配列に変更 ▼▼▼
   const [recommendations, setRecommendations] = useState<RecommendationResult[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const form = useForm<RestaurantCriteria>({
-    resolver: zodResolver(RestaurantCriteriaSchema),
+  // Use the form schema which expects a Date object for the 'date' field
+  // The schema from lib/schemas expects date as string, so we extend it here for form validation
+  const form = useForm<RestaurantCriteriaType>({
+    resolver: zodResolver(
+      RestaurantCriteriaFormSchema.extend({
+        date: z.date({ required_error: "日付を選択してください。" }),
+      })
+    ),
     defaultValues: {
-      date: undefined,
+      date: new Date(), // Initialize with a Date object
       time: "19:00",
       budget: "5,000円～8,000円",
       cuisine: "",
@@ -50,23 +57,45 @@ export default function RestaurantFinder() {
     },
   });
 
+  // This useEffect is fine as it sets a Date object
   useEffect(() => {
-    form.setValue("date", new Date());
+    if (!form.getValues("date")) {
+      form.setValue("date", new Date());
+    }
   }, [form]);
 
-  const onSubmit: SubmitHandler<RestaurantCriteria> = async (data) => {
+  const onSubmit: SubmitHandler<RestaurantCriteriaType> = async (data) => {
     setIsLoading(true);
     setError(null);
     setRecommendations(null);
 
-    const result = await getRestaurantSuggestion(data);
+    // The `data` object here correctly has `date` as a Date object.
+    // The server action `getRestaurantSuggestion` expects `RestaurantCriteria`
+    // where `date` is a string in 'yyyy-MM-dd' format.
+    const criteriaForAction = {
+      ...data,
+      date: format(data.date, 'yyyy-MM-dd'), // Format Date to string for action
+    };
 
-    // ▼▼▼ レスポンスデータ(配列)の処理を修正 ▼▼▼
+    // @ts-ignore - criteria.date is intentionally a string for the action,
+    // while the form hook and PreferenceDisplayCard use Date object.
+    const result = await getRestaurantSuggestion(criteriaForAction);
+
     if (result.data && result.data.length > 0) {
-      setRecommendations(result.data);
+      // The result.data[x].criteria.date will be a string here (from actions.ts).
+      // We need to convert it back to Date for PreferenceDisplayCard and if we re-populate the form.
+      const recommendationsWithDateObjects = result.data.map(rec => ({
+        ...rec,
+        criteria: {
+          ...rec.criteria,
+          // Ensure date from criteria in the response is converted to Date object for display
+          date: new Date(rec.criteria.date) 
+        }
+      }));
+      setRecommendations(recommendationsWithDateObjects);
       toast({
         title: "お店が見つかりました！",
-        description: `${result.data.length}件のおすすめ候補を提案します。`,
+        description: `${recommendationsWithDateObjects.length}件のおすすめ候補を提案します。`,
       });
     } else if (result.error) {
       setError(result.error);
@@ -76,12 +105,11 @@ export default function RestaurantFinder() {
         variant: "destructive",
       });
     } else {
-      // データもエラーも無い場合 (念のため)
       setError("AIがお気に入りのお店を見つけられませんでした。条件を変えて再度お試しください。");
       toast({
-          title: "検索結果なし",
-          description: "条件に合うお店が見つかりませんでした。",
-          variant: "destructive",
+        title: "検索結果なし",
+        description: "条件に合うお店が見つかりませんでした。",
+        variant: "destructive",
       });
     }
     setIsLoading(false);
@@ -100,7 +128,6 @@ export default function RestaurantFinder() {
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              {/* --- フォーム部分は変更なし --- */}
               <FormField
                 control={form.control}
                 name="date"
@@ -256,17 +283,17 @@ export default function RestaurantFinder() {
         </Card>
       )}
 
-      {/* ▼▼▼ 推薦結果(配列)をループして表示するよう修正 ▼▼▼ */}
       {recommendations && !isLoading && !error && (
         <div className="space-y-8">
           {recommendations.map((rec) => (
             <RestaurantInfoCard 
-              key={rec.placeId} // ユニークなキーとしてplaceIdを使用
+              key={rec.placeId} 
               suggestion={rec.suggestion} 
               analysis={rec.analysis}
               photoUrl={rec.photoUrl}
             />
           ))}
+          {/* Ensure recommendations[0].criteria.date is a Date object for PreferenceDisplayCard */}
           <PreferenceDisplayCard criteria={recommendations[0].criteria} />
            <Button variant="outline" onClick={() => setRecommendations(null)} className="w-full">
             別の条件で検索する

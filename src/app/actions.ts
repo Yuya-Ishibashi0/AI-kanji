@@ -4,10 +4,11 @@ import { FinalOutput, selectAndAnalyzeBestRestaurants } from "@/ai/flows/select-
 import { filterRestaurantsForGroup } from "@/ai/flows/filter-restaurants";
 import { type RestaurantCriteria } from "@/lib/schemas";
 import { getRestaurantDetails, getRestaurantPhotoUrl, textSearchNew, RestaurantCandidate } from "@/services/google-places-service";
+import { format } from "date-fns";
 
 // フロントエンドに渡す、写真URLまで含んだ最終的な型
 export type RecommendationResult = FinalOutput[number] & {
-    criteria: RestaurantCriteria;
+    criteria: RestaurantCriteria; // Keep as original criteria type
     photoUrl?: string;
     placeId: string; // フロントエンドでのkeyなどに使うためIDを追加
 };
@@ -16,19 +17,25 @@ export type RecommendationResult = FinalOutput[number] & {
  * フロントエンドから呼び出される、新しいロジックを実装したサーバーアクション
  */
 export async function getRestaurantSuggestion(
-  criteria: RestaurantCriteria
+  criteria: RestaurantCriteria // This receives the original criteria with Date object
 ): Promise<{ data?: RecommendationResult[]; error?: string }> { // 返り値の型を配列に変更
   try {
+    // Format date to string for AI flows
+    const criteriaForAI = {
+        ...criteria,
+        date: format(new Date(criteria.date), 'yyyy-MM-dd') // Ensure date is a string in YYYY-MM-DD
+    };
+
     // 1. Places API (Text Search - New) を使い、レビューサマリーを含む候補リストを取得する
-    const searchResults: RestaurantCandidate[] = await textSearchNew(criteria);
+    const searchResults: RestaurantCandidate[] = await textSearchNew(criteriaForAI);
     if (!searchResults || searchResults.length === 0) {
-      return { error: `指定された条件（場所: ${criteria.location}, 料理: ${criteria.cuisine}）に一致するレストランが見つかりませんでした。` };
+      return { error: `指定された条件（場所: ${criteriaForAI.location}, 料理: ${criteriaForAI.cuisine}）に一致するレストランが見つかりませんでした。` };
     }
 
     // 2.【一次判定AI】レビューサマリーを基に、グループ利用に適したレストランを5件まで絞り込む
     const filteredPlaceIds = await filterRestaurantsForGroup({
       restaurants: searchResults,
-      criteria: criteria,
+      criteria: criteriaForAI, // Pass string date here
     });
     
     if (!filteredPlaceIds || filteredPlaceIds.length === 0) {
@@ -46,7 +53,7 @@ export async function getRestaurantSuggestion(
     // 4.【最終選定・分析AI】最も優れた候補をAIに【3件】選ばせ、分析と推薦文を生成させる
     const top3Analyses = await selectAndAnalyzeBestRestaurants({ // 複数件取得するフローを呼び出し
       candidates: detailedCandidates,
-      criteria: criteria,
+      criteria: criteriaForAI, // Pass string date here
     });
 
     if (!top3Analyses || top3Analyses.length === 0) {
@@ -68,7 +75,7 @@ export async function getRestaurantSuggestion(
             return {
                 ...result,
                 placeId: placeId || '', // keyとして利用するためにIDを付与
-                criteria,
+                criteria, // Return original criteria (with Date object) to frontend
                 photoUrl,
             };
         })
@@ -90,6 +97,8 @@ export async function getRestaurantSuggestion(
         errorMessage = "Google Places APIへのリクエストが拒否されました。APIキーや設定、利用規約を確認してください。";
     } else if (errorMessage.includes("deadline")) {
        errorMessage = "AIまたは外部APIの応答時間が長すぎました。しばらくしてからもう一度お試しください。";
+    } else if (errorMessage.includes("INVALID_ARGUMENT") && errorMessage.includes("criteria.date")) {
+        errorMessage = "日付の形式に問題がある可能性があります。AIフローが期待する日付形式を確認してください。";
     }
     return { error: `処理中にエラーが発生しました: ${errorMessage}` };
   }
