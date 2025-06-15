@@ -2,7 +2,8 @@
 'use server';
 
 /**
- * @fileOverview AI flow to analyze restaurant reviews and extract sentiment, key aspects, and mentions of group dining.
+ * @fileOverview AI flow to analyze restaurant reviews and extract sentiment, key aspects, 
+ * group dining mentions, and specific "Kanji Checklist" items.
  *
  * - analyzeRestaurantReviews - Function to analyze restaurant reviews.
  * - AnalyzeRestaurantReviewsInput - Input type for analyzeRestaurantReviews.
@@ -11,18 +12,16 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import { AnalyzeRestaurantReviewsOutputSchema } from '@/lib/schemas'; // Import from centralized location
+import { AnalyzeRestaurantReviewsOutputSchema } from '@/lib/schemas'; 
 
-// Input schema now expects a single string of reviews (e.g., a summary)
 const AnalyzeRestaurantReviewsInputSchema = z.object({
   restaurantName: z.string().describe('The name of the restaurant to analyze.'),
-  reviews: z.string().describe('A summary of reviews for the restaurant. This might be a concatenation of multiple reviews.'),
+  reviews: z.string().describe('A summary or concatenation of reviews for the restaurant.'),
 });
 export type AnalyzeRestaurantReviewsInput = z.infer<
   typeof AnalyzeRestaurantReviewsInputSchema
 >;
 
-// Type is still exported for usage
 export type AnalyzeRestaurantReviewsOutput = z.infer<
   typeof AnalyzeRestaurantReviewsOutputSchema
 >;
@@ -34,34 +33,59 @@ export async function analyzeRestaurantReviews(
 }
 
 const analyzeRestaurantReviewsPrompt = ai.definePrompt({
-  name: 'analyzeRestaurantReviewsPrompt',
+  name: 'analyzeRestaurantReviewsForKanjiPrompt', // New name
   input: {schema: AnalyzeRestaurantReviewsInputSchema},
-  output: {schema: AnalyzeRestaurantReviewsOutputSchema}, // Use the imported schema
-  prompt: `あなたはレストランのレビュー要約を分析するAIエキスパートです。あなたの目標は、提供された情報から重要な洞察を日本語で抽出することです。
+  output: {schema: AnalyzeRestaurantReviewsOutputSchema}, 
+  prompt: `あなたはレストランのレビューを分析するAIエキスパートで、特に重要な会合（例：送別会、歓迎会）の幹事の視点を持っています。
+  あなたの目標は、提供されたレビュー情報から重要な洞察を日本語で抽出し、以下の構造化データとして出力することです。
 
   レストラン名: {{restaurantName}}
-  レビューの要約: {{reviews}}
+  レビュー情報: {{reviews}}
 
-  このレビュー要約を分析し、以下の情報を抽出してください。**すべての出力は必ず日本語で生成してください。**
+  このレビュー情報を徹底的に分析し、以下の各項目について情報を抽出してください。**すべての出力は必ず日本語で生成してください。**
+  該当する情報が見つからない場合は、各項目に「情報なし」と記述してください。
 
-  - 全体的な感情 (Overall Sentiment): レストランに対する全体的な感情を判断してください。
-  - 主要な側面 (Key Aspects):
-    - 料理 (Food): 料理に関する感情と詳細を抽出してください。
-    - サービス (Service): サービスに関する感情と詳細を抽出してください。
-    - 雰囲気 (Ambiance): 雰囲気に関する感情と詳細を抽出してください。
-  - グループでの利用体験 (Group Dining Experience): グループでの食事に関する言及、グループ利用への適性などを抽出してください。
+  - overallSentiment: レストランに対する全体的な感情（例：高評価、賛否両論、不評など）。
+  - keyAspects:
+    - food: 料理に関する感情と具体的な言及（例：「ピザが特に好評」「値段の割に味は普通」など）。
+    - service: サービスに関する感情と具体的な言及（例：「店員の対応が丁寧」「提供が遅い」など）。
+    - ambiance: 雰囲気に関する感情と具体的な言及（例：「個室があり落ち着ける」「店内は活気がある」など）。
+  - groupDiningExperience: グループでの食事体験、グループ利用への適性に関する言及（例：「大人数での予約がしやすい」「宴会には不向き」など）。
+  - kanjiChecklist: 幹事視点での重要なチェック項目。
+    - privateRoomQuality: 個室の質（例：「完全個室で静かだった」「半個室で隣の声が聞こえる」など、具体的な記述や防音性に関する情報）。
+    - noiseLevel: 店内の静かさ、騒がしさ、会話のしやすさに関する具体的な言及（例：「店内は落ち着いていて会話が弾んだ」「かなり騒がしく、声が通りにくかった」など）。
+    - groupService: 団体利用時のドリンク提供のスムーズさ、注文の取りやすさ、スタッフの対応（例：「大人数だったがドリンク提供は早かった」「団体客に慣れていない印象だった」など）。
   `,
 });
 
 
 const analyzeRestaurantReviewsFlow = ai.defineFlow(
   {
-    name: 'analyzeRestaurantReviewsFlow',
+    name: 'analyzeRestaurantReviewsForKanjiFlow', // New name
     inputSchema: AnalyzeRestaurantReviewsInputSchema,
-    outputSchema: AnalyzeRestaurantReviewsOutputSchema, // Use the imported schema
+    outputSchema: AnalyzeRestaurantReviewsOutputSchema, 
   },
   async input => {
     const {output} = await analyzeRestaurantReviewsPrompt(input);
-    return output!;
+    // Ensure kanjiChecklist is present, even if AI fails to provide it, to match schema
+    const defaultKanjiChecklist = {
+        privateRoomQuality: "情報なし",
+        noiseLevel: "情報なし",
+        groupService: "情報なし",
+    };
+    
+    if (output) {
+        return {
+            ...output,
+            kanjiChecklist: output.kanjiChecklist || defaultKanjiChecklist,
+        };
+    }
+    // Fallback if AI output is entirely missing
+    return {
+        overallSentiment: "情報なし",
+        keyAspects: { food: "情報なし", service: "情報なし", ambiance: "情報なし" },
+        groupDiningExperience: "情報なし",
+        kanjiChecklist: defaultKanjiChecklist,
+    };
   }
 );

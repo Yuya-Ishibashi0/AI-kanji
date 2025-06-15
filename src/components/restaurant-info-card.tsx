@@ -7,9 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { BadgeCheck, CalendarClock, MessageSquareQuote, Sparkles, Star, ThumbsDown, ThumbsUp, Users } from "lucide-react";
+import { BadgeCheck, CalendarClock, MessageSquareQuote, Sparkles, Star, ThumbsDown, ThumbsUp, Users, CheckCircle2, AlertCircle, Info } from "lucide-react";
 import Image from 'next/image';
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 interface RestaurantInfoCardProps {
   suggestion: SuggestRestaurantsOutput;
@@ -61,6 +61,16 @@ export default function RestaurantInfoCard({ suggestion, analysis, photoUrl }: R
     return <Star className="h-5 w-5 text-yellow-500" />;
   }
 
+  const KanjiChecklistItem = ({ label, value }: { label: string; value?: string }) => (
+    <div className="flex items-start">
+      <dt className="font-semibold w-28 shrink-0">{label}:</dt>
+      <dd className="text-muted-foreground">
+        {value && value.trim() !== "情報なし" ? value : <span className="italic">情報なし</span>}
+      </dd>
+    </div>
+  );
+
+
   return (
     <Card className="shadow-lg w-full overflow-hidden">
       <CardHeader className="pb-4">
@@ -106,8 +116,22 @@ export default function RestaurantInfoCard({ suggestion, analysis, photoUrl }: R
           </div>
         </div>
 
+        {analysis.kanjiChecklist && (
+            <div>
+                <h3 className="text-lg font-semibold mb-2 mt-4 flex items-center font-headline">
+                    <BadgeCheck className="mr-2 h-5 w-5 text-primary" />
+                    幹事さん向けチェックポイント
+                </h3>
+                <dl className="space-y-1 text-sm bg-blue-50 dark:bg-blue-900/30 p-4 rounded-md">
+                    <KanjiChecklistItem label="個室の質" value={analysis.kanjiChecklist.privateRoomQuality} />
+                    <KanjiChecklistItem label="店内の静かさ" value={analysis.kanjiChecklist.noiseLevel} />
+                    <KanjiChecklistItem label="団体サービス" value={analysis.kanjiChecklist.groupService} />
+                </dl>
+            </div>
+        )}
+
         <div>
-          <h3 className="text-lg font-semibold mb-2 flex items-center font-headline">
+          <h3 className="text-lg font-semibold mb-2 mt-4 flex items-center font-headline">
             <Sparkles className="mr-2 h-5 w-5 text-accent" />
             おすすめ理由
           </h3>

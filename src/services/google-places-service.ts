@@ -1,3 +1,4 @@
+
 'use server';
 
 import type { RestaurantCriteria } from "@/lib/schemas";
@@ -19,14 +20,14 @@ export interface RestaurantDetails {
 export interface RestaurantCandidate {
     id: string;
     name: string;
-    reviewSummary?: string;
+    reviewSummary?: string; // Changed from reviewsText for clarity, was reviewSummary from API
 }
 
 interface TextSearchApiResponse {
   places: {
     id: string;
     displayName?: { text: string };
-    reviewSummary?: { text: string };
+    reviewSummary?: { text: string }; // This is the field from Google's API
   }[];
 }
 
@@ -46,17 +47,22 @@ export async function textSearchNew(criteria: RestaurantCriteria): Promise<Resta
   const url = 'https://places.googleapis.com/v1/places:searchText';
   if (!GOOGLE_PLACES_API_KEY) throw new Error('Google Places API key is not configured.');
 
+  let query = `${criteria.cuisine} in ${criteria.location}`;
+  if (criteria.privateRoomRequested) {
+    query += " 個室"; // Append "個室" (private room) if requested
+  }
+
   const response = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'X-Goog-Api-Key': GOOGLE_PLACES_API_KEY,
-      'X-Goog-FieldMask': 'places.id,places.displayName,places.reviewSummary', // reviewSummary を使用
+      'X-Goog-FieldMask': 'places.id,places.displayName,places.reviewSummary', // Use reviewSummary
     },
     body: JSON.stringify({
-      textQuery: `${criteria.cuisine} in ${criteria.location}`,
+      textQuery: query,
       languageCode: 'ja',
-      maxResultCount: 10,
+      maxResultCount: 10, // Keep max results at 10
     }),
   });
 
@@ -67,7 +73,8 @@ export async function textSearchNew(criteria: RestaurantCriteria): Promise<Resta
   return data.places.map(place => ({
     id: place.id,
     name: place.displayName?.text || '名前不明',
-    reviewSummary: place.reviewSummary?.text,
+    // Pass the reviewSummary from Google directly. It's a short summary.
+    reviewSummary: place.reviewSummary?.text, 
   }));
 }
 
@@ -75,7 +82,6 @@ export async function getRestaurantDetails(placeId: string): Promise<Omit<Restau
   const url = `https://places.googleapis.com/v1/places/${placeId}`;
   if (!GOOGLE_PLACES_API_KEY) throw new Error('Google Places API key is not configured.');
   
-  // ▼▼▼ 写真(photos)を除外してAPIコールを軽量化 ▼▼▼
   const fieldMask = 'id,displayName,formattedAddress,rating,userRatingCount,reviews';
 
   try {
@@ -109,14 +115,11 @@ export async function getRestaurantDetails(placeId: string): Promise<Omit<Restau
   }
 }
 
-/**
- * 【新規追加】写真URLのみを取得する軽量な関数
- */
 export async function getRestaurantPhotoUrl(placeId: string): Promise<string | undefined> {
     const url = `https://places.googleapis.com/v1/places/${placeId}`;
     if (!GOOGLE_PLACES_API_KEY) return undefined;
 
-    const fieldMask = 'photos'; // 写真情報のみをリクエスト
+    const fieldMask = 'photos'; 
 
     try {
         const response = await fetch(url, {

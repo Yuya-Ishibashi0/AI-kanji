@@ -1,12 +1,13 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CalendarIcon, ChefHat, Clock, DollarSign, Loader2, MapPin, Search, Wand2 } from "lucide-react";
+import { CalendarIcon, ChefHat, Clock, DollarSign, Loader2, MapPin, Search, Wand2, DoorOpen } from "lucide-react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
-import { z } from "zod"; // Added import for z
+import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -15,10 +16,10 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { getRestaurantSuggestion, type RecommendationResult } from "@/app/actions";
-// Import the original schema for form validation (which expects Date object)
-import { RestaurantCriteriaSchema as RestaurantCriteriaFormSchema, type RestaurantCriteria as RestaurantCriteriaType } from "@/lib/schemas";
+import { RestaurantCriteriaSchema as RestaurantCriteriaBaseSchema, type RestaurantCriteria as RestaurantCriteriaType } from "@/lib/schemas";
 import RestaurantInfoCard from "./restaurant-info-card";
 import PreferenceDisplayCard from "./preference-display-card";
 import { useToast } from "@/hooks/use-toast";
@@ -34,62 +35,61 @@ const budgetOptions = [
   "8,000円～10,000円", "10,000円～15,000円", "15,000円以上",
 ];
 
+// Extend the base schema for form validation, date is a Date object here
+const RestaurantCriteriaFormSchema = RestaurantCriteriaBaseSchema.extend({
+  date: z.date({ required_error: "日付を選択してください。" }),
+  privateRoomRequested: z.boolean().optional(),
+});
+type RestaurantCriteriaFormType = z.infer<typeof RestaurantCriteriaFormSchema>;
+
+
 export default function RestaurantFinder() {
   const [isLoading, setIsLoading] = useState(false);
   const [recommendations, setRecommendations] = useState<RecommendationResult[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  // Use the form schema which expects a Date object for the 'date' field
-  // The schema from lib/schemas expects date as string, so we extend it here for form validation
-  const form = useForm<RestaurantCriteriaType>({
-    resolver: zodResolver(
-      RestaurantCriteriaFormSchema.extend({
-        date: z.date({ required_error: "日付を選択してください。" }),
-      })
-    ),
+  const form = useForm<RestaurantCriteriaFormType>({
+    resolver: zodResolver(RestaurantCriteriaFormSchema),
     defaultValues: {
-      date: new Date(), // Initialize with a Date object
+      date: new Date(),
       time: "19:00",
       budget: "5,000円～8,000円",
       cuisine: "",
       location: "",
+      privateRoomRequested: false,
     },
   });
 
-  // This useEffect is fine as it sets a Date object
   useEffect(() => {
     if (!form.getValues("date")) {
       form.setValue("date", new Date());
     }
   }, [form]);
 
-  const onSubmit: SubmitHandler<RestaurantCriteriaType> = async (data) => {
+  const onSubmit: SubmitHandler<RestaurantCriteriaFormType> = async (data) => {
     setIsLoading(true);
     setError(null);
     setRecommendations(null);
 
-    // The `data` object here correctly has `date` as a Date object.
-    // The server action `getRestaurantSuggestion` expects `RestaurantCriteria`
-    // where `date` is a string in 'yyyy-MM-dd' format.
-    const criteriaForAction = {
+    const criteriaForAction: RestaurantCriteriaType = {
       ...data,
-      date: format(data.date, 'yyyy-MM-dd'), // Format Date to string for action
+      date: format(data.date, 'yyyy-MM-dd'),
+      privateRoomRequested: data.privateRoomRequested ?? false, // Ensure boolean
     };
-
-    // @ts-ignore - criteria.date is intentionally a string for the action,
-    // while the form hook and PreferenceDisplayCard use Date object.
-    const result = await getRestaurantSuggestion(criteriaForAction);
+    
+    // The type assertion is needed because the server action expects date as string,
+    // but the full criteria object might be used elsewhere with date as Date.
+    // We are confident criteriaForAction has date as string here.
+    const result = await getRestaurantSuggestion(criteriaForAction as any);
 
     if (result.data && result.data.length > 0) {
-      // The result.data[x].criteria.date will be a string here (from actions.ts).
-      // We need to convert it back to Date for PreferenceDisplayCard and if we re-populate the form.
       const recommendationsWithDateObjects = result.data.map(rec => ({
         ...rec,
         criteria: {
           ...rec.criteria,
-          // Ensure date from criteria in the response is converted to Date object for display
-          date: new Date(rec.criteria.date) 
+          date: new Date(rec.criteria.date), // Convert string date back to Date for display
+          // privateRoomRequested should already be correct from server
         }
       }));
       setRecommendations(recommendationsWithDateObjects);
@@ -242,6 +242,24 @@ export default function RestaurantFinder() {
                   </FormItem>
                 )}
               />
+
+              <FormField
+                control={form.control}
+                name="privateRoomRequested"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-3 shadow-sm">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel className="flex items-center"><DoorOpen className="mr-2 h-4 w-4 text-muted-foreground" />個室を希望する</FormLabel>
+                    </div>
+                  </FormItem>
+                )}
+              />
               
               <Button type="submit" disabled={isLoading} className="w-full text-base py-6">
                 {isLoading ? (
@@ -293,7 +311,6 @@ export default function RestaurantFinder() {
               photoUrl={rec.photoUrl}
             />
           ))}
-          {/* Ensure recommendations[0].criteria.date is a Date object for PreferenceDisplayCard */}
           <PreferenceDisplayCard criteria={recommendations[0].criteria} />
            <Button variant="outline" onClick={() => setRecommendations(null)} className="w-full">
             別の条件で検索する

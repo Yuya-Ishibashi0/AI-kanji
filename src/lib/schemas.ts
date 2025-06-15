@@ -7,9 +7,16 @@ export const RestaurantCriteriaSchema = z.object({
   budget: z.string().min(1, "予算を入力してください。"),
   cuisine: z.string().min(1, "料理の種類を入力してください。"),
   location: z.string().min(1, "場所を入力してください。"),
+  privateRoomRequested: z.boolean().optional().describe("Whether the user requested a private room."),
 });
 
 export type RestaurantCriteria = z.infer<typeof RestaurantCriteriaSchema>;
+
+export const KanjiChecklistSchema = z.object({
+  privateRoomQuality: z.string().describe("個室の質（完全個室か、防音性など）に関するレビュー分析。該当情報がなければ「情報なし」と記述。"),
+  noiseLevel: z.string().describe("店内の静かさ、会話のしやすさに関するレビュー分析。該当情報がなければ「情報なし」と記述。"),
+  groupService: z.string().describe("団体利用時のドリンク提供速度やスタッフの対応に関するレビュー分析。該当情報がなければ「情報なし」と記述。"),
+});
 
 export const AnalyzeRestaurantReviewsOutputSchema = z.object({
   overallSentiment: z
@@ -33,6 +40,7 @@ export const AnalyzeRestaurantReviewsOutputSchema = z.object({
       .describe(
         'グループでの食事体験、グループ利用への適性に関する言及（例：「大人数での予約がしやすい」「宴会には不向き」など）。日本語で記述してください。'
       ),
+  kanjiChecklist: KanjiChecklistSchema.optional().describe("幹事視点でのチェックリスト項目。"),
 });
 export type AnalyzeRestaurantReviewsOutput = z.infer<
   typeof AnalyzeRestaurantReviewsOutputSchema
@@ -43,3 +51,4 @@ export const SuggestRestaurantsOutputSchema = z.object({
   recommendationRationale: z.string().describe('分析されたレビューと基準に基づいてレストランをおすすめする理由の詳細な説明（日本語で記述）。'),
 });
 export type SuggestRestaurantsOutput = z.infer<typeof SuggestRestaurantsOutputSchema>;
+
