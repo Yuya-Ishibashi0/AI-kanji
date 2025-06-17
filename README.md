@@ -1,6 +1,10 @@
 
 # AI幹事くん
 
+##デプロイリンク（仮）
+https://9000-firebase-studio-1749405167197.cluster-fdkw7vjj7bgguspe3fbbc25tra.cloudworkstations.dev/?monospaceUid=981639
+
+
 ## リポジトリ概要
 
 このプロジェクトは Next.js (TypeScript) を使った Firebase Studio スターターです。
