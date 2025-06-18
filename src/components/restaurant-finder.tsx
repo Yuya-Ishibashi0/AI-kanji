@@ -19,7 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { getRestaurantSuggestion, type RecommendationResult } from "@/app/actions";
-import { RestaurantCriteriaSchema as RestaurantCriteriaBaseSchema, type RestaurantCriteria as RestaurantCriteriaType } from "@/lib/schemas";
+import { RestaurantCriteriaSchema as RestaurantCriteriaBaseSchema, type RestaurantCriteria as LibRestaurantCriteriaType } from "@/lib/schemas";
 import RestaurantInfoCard from "./restaurant-info-card";
 import PreferenceDisplayCard from "./preference-display-card";
 import { useToast } from "@/hooks/use-toast";
@@ -35,9 +35,8 @@ const budgetOptions = [
   "8,000円～10,000円", "10,000円～15,000円", "15,000円以上",
 ];
 
-// Extend the base schema for form validation, date is a Date object here
 const RestaurantCriteriaFormSchema = RestaurantCriteriaBaseSchema.extend({
-  date: z.date({ required_error: "日付を選択してください。" }),
+  date: z.date({ required_error: "日付を選択してください。" }).nullable().optional(),
   privateRoomRequested: z.boolean().optional(),
 });
 type RestaurantCriteriaFormType = z.infer<typeof RestaurantCriteriaFormSchema>;
@@ -48,11 +47,11 @@ export default function RestaurantFinder() {
   const [recommendations, setRecommendations] = useState<RecommendationResult[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
-
+  
   const form = useForm<RestaurantCriteriaFormType>({
     resolver: zodResolver(RestaurantCriteriaFormSchema),
     defaultValues: {
-      date: new Date(),
+      date: undefined, 
       time: "19:00",
       budget: "5,000円～8,000円",
       cuisine: "",
@@ -61,35 +60,46 @@ export default function RestaurantFinder() {
     },
   });
 
+  const [minCalendarDate, setMinCalendarDate] = useState<Date | undefined>(undefined);
+
   useEffect(() => {
-    if (!form.getValues("date")) {
-      form.setValue("date", new Date());
-    }
-  }, [form]);
+    form.setValue("date", new Date());
+    setMinCalendarDate(new Date(new Date().setHours(0, 0, 0, 0)));
+  }, [form.setValue]);
 
   const onSubmit: SubmitHandler<RestaurantCriteriaFormType> = async (data) => {
+    if (!data.date) {
+      setError("日付が選択されていません。");
+      toast({
+        title: "エラー",
+        description: "日付を選択してください。",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setIsLoading(true);
     setError(null);
     setRecommendations(null);
 
-    const criteriaForAction: RestaurantCriteriaType = {
+    const criteriaForAction: LibRestaurantCriteriaType = {
       ...data,
-      date: format(data.date, 'yyyy-MM-dd'),
-      privateRoomRequested: data.privateRoomRequested ?? false, // Ensure boolean
+      date: format(data.date, 'yyyy-MM-dd'), 
+      privateRoomRequested: data.privateRoomRequested ?? false,
+      time: data.time || "19:00", 
+      budget: data.budget || "5,000円～8,000円",
+      cuisine: data.cuisine || "",
+      location: data.location || "",
     };
     
-    // The type assertion is needed because the server action expects date as string,
-    // but the full criteria object might be used elsewhere with date as Date.
-    // We are confident criteriaForAction has date as string here.
-    const result = await getRestaurantSuggestion(criteriaForAction as any);
+    const result = await getRestaurantSuggestion(criteriaForAction);
 
     if (result.data && result.data.length > 0) {
       const recommendationsWithDateObjects = result.data.map(rec => ({
         ...rec,
         criteria: {
           ...rec.criteria,
-          date: new Date(rec.criteria.date), // Convert string date back to Date for display
-          // privateRoomRequested should already be correct from server
+          date: new Date(rec.criteria.date), 
         }
       }));
       setRecommendations(recommendationsWithDateObjects);
@@ -105,7 +115,7 @@ export default function RestaurantFinder() {
         variant: "destructive",
       });
     } else {
-      setError("AIがお気に入りのお店を見つけられませんでした。条件を変えて再度お試しください。");
+      setError("AIが条件に合うお店を見つけられませんでした。条件を変えて再度お試しください。");
       toast({
         title: "検索結果なし",
         description: "条件に合うお店が見つかりませんでした。",
@@ -156,9 +166,9 @@ export default function RestaurantFinder() {
                       <PopoverContent className="w-auto p-0" align="start">
                         <Calendar
                           mode="single"
-                          selected={field.value}
+                          selected={field.value || undefined} 
                           onSelect={field.onChange}
-                          disabled={(date) => date < new Date(new Date().setHours(0,0,0,0))}
+                          disabled={(date) => minCalendarDate ? date < minCalendarDate : true}
                           initialFocus
                           locale={ja}
                         />
@@ -202,7 +212,7 @@ export default function RestaurantFinder() {
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="予算を選択" />
-                        </SelectTrigger>
+                        </Trigger>
                       </FormControl>
                       <SelectContent>
                         {budgetOptions.map(budget => (
@@ -261,7 +271,7 @@ export default function RestaurantFinder() {
                 )}
               />
               
-              <Button type="submit" disabled={isLoading} className="w-full text-base py-6">
+              <Button type="submit" disabled={isLoading || !form.formState.isValid || !minCalendarDate} className="w-full text-base py-6">
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-5 w-5 animate-spin" />
@@ -311,7 +321,9 @@ export default function RestaurantFinder() {
               photoUrl={rec.photoUrl}
             />
           ))}
-          <PreferenceDisplayCard criteria={recommendations[0].criteria} />
+          {recommendations.length > 0 && recommendations[0] && recommendations[0].criteria && (
+            <PreferenceDisplayCard criteria={recommendations[0].criteria} />
+          )}
            <Button variant="outline" onClick={() => setRecommendations(null)} className="w-full">
             別の条件で検索する
           </Button>
