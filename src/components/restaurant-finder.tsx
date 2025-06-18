@@ -211,8 +211,8 @@ export default function RestaurantFinder() {
                      <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="予算を選択" />
-                        </Trigger>
+                          <SelectValue placeholder="予算を選択" /> 
+                        </SelectTrigger>
                       </FormControl>
                       <SelectContent>
                         {budgetOptions.map(budget => (

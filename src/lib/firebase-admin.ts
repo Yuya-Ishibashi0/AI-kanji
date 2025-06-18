@@ -1,35 +1,42 @@
 
 import * as admin from 'firebase-admin';
 
-// 環境変数からFirebaseサービスアカウントの情報を読み込む
-const projectId = process.env.FIREBASE_PROJECT_ID;
-const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'); // 改行文字を適切に処理
-const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+// Read the service account JSON from an environment variable
+const serviceAccountJsonString = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
 
-if (!projectId || !privateKey || !clientEmail) {
-  console.error('Firebase Admin SDKの初期化に必要な環境変数が設定されていません。');
-  console.error('必要な環境変数: FIREBASE_PROJECT_ID, FIREBASE_PRIVATE_KEY, FIREBASE_CLIENT_EMAIL');
-  // アプリケーションの起動を妨げるためにエラーをスローするか、適切に処理する
-  // ここではFirestoreインスタンスをエクスポートする前にエラーを示すため、
-  // adminDbがundefinedになる可能性があることを示すか、あるいはエラーをスローする
-  throw new Error('Firebase Admin SDKの認証情報が不足しています。');
+if (!serviceAccountJsonString) {
+  console.error('Firebase Admin SDKの初期化に必要な環境変数 FIREBASE_SERVICE_ACCOUNT_JSON が設定されていません。');
+  console.error('この環境変数には、サービスアカウントキーJSONファイルの内容を文字列として設定してください。');
+  throw new Error('Firebase Admin SDKの認証情報が不足しています。FIREBASE_SERVICE_ACCOUNT_JSON が見つかりません。');
 }
 
-const serviceAccount = {
-  projectId: projectId,
-  privateKey: privateKey,
-  clientEmail: clientEmail,
-};
+let serviceAccount;
+try {
+  serviceAccount = JSON.parse(serviceAccountJsonString);
+} catch (error) {
+  console.error('環境変数 FIREBASE_SERVICE_ACCOUNT_JSON の内容をJSONとしてパースできませんでした。');
+  console.error('JSONの形式が正しいか、特に改行文字(\'\\n\')が適切にエスケープされているか確認してください。');
+  console.error('パースエラー:', error);
+  throw new Error('Firebase Admin SDKの認証情報が無効です。FIREBASE_SERVICE_ACCOUNT_JSON のパースに失敗しました。');
+}
+
+// Validate essential fields after parsing
+if (!serviceAccount.project_id || !serviceAccount.private_key || !serviceAccount.client_email) {
+    console.error('パースされた FIREBASE_SERVICE_ACCOUNT_JSON に必要なフィールド (project_id, private_key, client_email) が不足しています。');
+    throw new Error('Firebase Admin SDKの認証情報に必要なフィールドが不足しています。');
+}
+
 
 if (!admin.apps.length) {
   try {
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
     });
-    console.log("Firebase Admin SDK initialized successfully from environment variables.");
+    console.log("Firebase Admin SDK initialized successfully from FIREBASE_SERVICE_ACCOUNT_JSON environment variable.");
   } catch (error) {
     console.error("Firebase Admin SDKの初期化に失敗しました:", error);
-    throw error; // 初期化失敗は致命的なのでエラーをスロー
+    console.error("エラー詳細:", error);
+    throw error; // Initialization failure is critical
   }
 }
 
