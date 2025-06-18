@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { BadgeCheck, CalendarClock, MessageSquareQuote, Sparkles, Star, ThumbsDown, ThumbsUp, Users, CheckCircle2, AlertCircle, Info } from "lucide-react";
+import { BadgeCheck, CalendarClock, MessageSquareQuote, Sparkles, Star, ThumbsDown, ThumbsUp, Users } from "lucide-react";
 import Image from 'next/image';
 import { useState } from "react";
 
@@ -87,16 +87,16 @@ export default function RestaurantInfoCard({ suggestion, analysis, photoUrl }: R
              <Image 
               src={photoUrl}
               alt={suggestion.restaurantName} 
-              layout="fill"
-              objectFit="cover"
+              fill
+              style={{ objectFit: 'cover' }}
               priority
             />
           ) : (
             <Image 
               src="https://placehold.co/600x400.png" 
               alt={suggestion.restaurantName + " placeholder image"}
-              layout="fill"
-              objectFit="cover"
+              fill
+              style={{ objectFit: 'cover' }}
               data-ai-hint="restaurant food"
             />
           )}
