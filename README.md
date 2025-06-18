@@ -75,11 +75,27 @@ sequenceDiagram
 
 ### 環境変数の設定
 
-以下の3種類のAPIキーが必須です。プロジェクトのルートに`.env.local`ファイルを作成して保存してください。
+以下のAPIキーが必須です。プロジェクトのルートに`.env.local`ファイルを作成して保存してください。
 
-- **Firebaseのキー** (`NEXT_PUBLIC_FIREBASE_*`)
-- **Google Places APIのキー** (`GOOGLE_PLACES_API_KEY`)
-- **Gemini APIのキー** (`GEMINI_API_KEY`)
+- **Firebase Admin SDK用 (3変数方式):** (`src/lib/firebase-admin.ts` で使用)
+    - `FIREBASE_PROJECT_ID`
+    - `FIREBASE_CLIENT_EMAIL`
+    - `FIREBASE_PRIVATE_KEY` (秘密鍵の改行は `\n` として文字列内に含めてください)
+- **Firebase Client SDK用:** (`src/lib/firebase.ts` で使用。これらはブラウザからもアクセスされるため `NEXT_PUBLIC_` が必要です)
+    - `NEXT_PUBLIC_FIREBASE_API_KEY`
+    - `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
+    - `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
+    - `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`
+    - `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`
+    - `NEXT_PUBLIC_FIREBASE_APP_ID`
+- **Google Places API用:** (`src/services/google-places-service.ts` で使用。サーバーサイド専用のキーです)
+    - `GOOGLE_PLACES_API_KEY`
+- **Gemini API用:** (サーバーサイドで使用)
+    - `GEMINI_API_KEY`
+
+**注意:**
+- `FIREBASE_PRIVATE_KEY` は、サービスアカウントキーJSONファイルから取得した秘密鍵の文字列です。`-----BEGIN PRIVATE KEY-----` で始まり `-----END PRIVATE KEY-----\n` で終わる形式で、その間の改行は `\n` としてください。例: `"-----BEGIN PRIVATE KEY-----\nYOUR_KEY_LINE_1\nYOUR_KEY_LINE_2\n-----END PRIVATE KEY-----\n"`
+- `GOOGLE_PLACES_API_KEY` は、`src/services/google-places-service.ts` でサーバーサイドのAPI呼び出しに使用されます。もし `.env.local` に `NEXT_PUBLIC_PLACES_API_KEY` しか設定していない場合は、`GOOGLE_PLACES_API_KEY` にリネームするか、同じ値を `GOOGLE_PLACES_API_KEY` としても設定してください。
 
 設定後、`npm run dev`で開発サーバを起動すると自動で読み込まれます。
 

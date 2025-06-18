@@ -41,21 +41,21 @@ if (!privateKeyFromEnv) {
 if (criticalError) {
     const finalErrorMessage = `CRITICAL FAILURE: One or more required Firebase Admin environment variables (FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY) are missing. Details: ${detailedErrorMessages.join('; ')}`;
     // This error will be thrown and should appear in server logs if this script is loaded during startup.
-    // If loaded lazily (e.g., in a server action), it might manifest as an Internal Server Error to the client.
     console.error("THROWING ERROR:", finalErrorMessage);
     throw new Error(finalErrorMessage);
 }
 
+// Ensure the private key from .env.local (which should have literal \n) is converted to actual newlines
 const formattedPrivateKey = privateKeyFromEnv?.replace(/\\n/g, '\n');
 
 if (!formattedPrivateKey || typeof formattedPrivateKey !== 'string' || !formattedPrivateKey.startsWith('-----BEGIN PRIVATE KEY-----') || !formattedPrivateKey.endsWith('-----END PRIVATE KEY-----\n')) {
     const msg = `CRITICAL FAILURE: The FIREBASE_PRIVATE_KEY environment variable content appears to be malformed or not a valid private key string. It must start with '-----BEGIN PRIVATE KEY-----' and end with '-----END PRIVATE KEY-----\\n', with actual newlines represented as '\\n' in the .env.local file. Ensure the .env.local value for FIREBASE_PRIVATE_KEY is enclosed in double quotes if it contains special characters, and all internal newlines are '\\n'. Current (obfuscated) start: ${formattedPrivateKey?.substring(0,20)}... Current (obfuscated) end: ...${formattedPrivateKey?.slice(-20)}`;
     console.error(msg);
-    detailedErrorMessages.push(msg);
     // This error will be thrown.
     console.error("THROWING ERROR:", msg);
     throw new Error(msg);
 }
+
 
 const serviceAccountForSdk: FirebaseAdminServiceAccountType = {
   projectId: projectId!,
