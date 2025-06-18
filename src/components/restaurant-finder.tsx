@@ -63,12 +63,13 @@ export default function RestaurantFinder() {
   const [minCalendarDate, setMinCalendarDate] = useState<Date | undefined>(undefined);
 
   useEffect(() => {
-    form.setValue("date", new Date());
-    setMinCalendarDate(new Date(new Date().setHours(0, 0, 0, 0)));
+    const today = new Date();
+    form.setValue("date", today); 
+    setMinCalendarDate(new Date(today.getFullYear(), today.getMonth(), today.getDate())); 
   }, [form.setValue]);
 
   const onSubmit: SubmitHandler<RestaurantCriteriaFormType> = async (data) => {
-    if (!data.date) {
+    if (!data.date) { 
       setError("日付が選択されていません。");
       toast({
         title: "エラー",
@@ -83,13 +84,12 @@ export default function RestaurantFinder() {
     setRecommendations(null);
 
     const criteriaForAction: LibRestaurantCriteriaType = {
-      ...data,
       date: format(data.date, 'yyyy-MM-dd'), 
-      privateRoomRequested: data.privateRoomRequested ?? false,
       time: data.time || "19:00", 
       budget: data.budget || "5,000円～8,000円",
       cuisine: data.cuisine || "",
       location: data.location || "",
+      privateRoomRequested: data.privateRoomRequested ?? false,
     };
     
     const result = await getRestaurantSuggestion(criteriaForAction);
@@ -118,7 +118,7 @@ export default function RestaurantFinder() {
       setError("AIが条件に合うお店を見つけられませんでした。条件を変えて再度お試しください。");
       toast({
         title: "検索結果なし",
-        description: "条件に合うお店が見つかりませんでした。",
+        description: "AIが条件に合うお店を見つけられませんでした。条件を変えて再度お試しください。",
         variant: "destructive",
       });
     }
@@ -168,7 +168,7 @@ export default function RestaurantFinder() {
                           mode="single"
                           selected={field.value || undefined} 
                           onSelect={field.onChange}
-                          disabled={(date) => minCalendarDate ? date < minCalendarDate : true}
+                          disabled={(date) => minCalendarDate ? date < minCalendarDate : true} 
                           initialFocus
                           locale={ja}
                         />
