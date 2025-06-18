@@ -3,67 +3,98 @@
 import { FinalOutput, selectAndAnalyzeBestRestaurants } from "@/ai/flows/select-and-analyze";
 import { filterRestaurantsForGroup } from "@/ai/flows/filter-restaurants";
 import { type RestaurantCriteria } from "@/lib/schemas";
-import { getRestaurantDetails, getRestaurantPhotoUrl, textSearchNew, RestaurantCandidate } from "@/services/google-places-service";
+import { getRestaurantDetails, getRestaurantPhotoUrl, textSearchNew, RestaurantCandidate, RestaurantDetails } from "@/services/google-places-service";
 import { format } from "date-fns";
+import { adminDb } from "@/lib/firebase-admin"; // ★ Admin SDKをインポート
+import { Timestamp } from "firebase-admin/firestore"; // ★ サーバーサイドのタイムスタンプ
 
 // フロントエンドに渡す、写真URLまで含んだ最終的な型
 export type RecommendationResult = FinalOutput[number] & {
-    criteria: RestaurantCriteria; // Keep as original criteria type
+    criteria: RestaurantCriteria;
     photoUrl?: string;
-    placeId: string; // フロントエンドでのkeyなどに使うためIDを追加
+    placeId: string;
 };
 
 /**
- * フロントエンドから呼び出される、新しいロジックを実装したサーバーアクション
+ * フロントエンドから呼び出される、Firestoreキャッシュロジックを実装したサーバーアクション
  */
 export async function getRestaurantSuggestion(
-  criteria: RestaurantCriteria // This receives the original criteria with Date object
-): Promise<{ data?: RecommendationResult[]; error?: string }> { // 返り値の型を配列に変更
+  criteria: RestaurantCriteria
+): Promise<{ data?: RecommendationResult[]; error?: string }> {
   try {
-    // Format date to string for AI flows
     const criteriaForAI = {
         ...criteria,
-        date: format(new Date(criteria.date), 'yyyy-MM-dd') // Ensure date is a string in YYYY-MM-DD
+        date: format(new Date(criteria.date), 'yyyy-MM-dd')
     };
 
-    // 1. Places API (Text Search - New) を使い、レビューサマリーを含む候補リストを取得する
+    // 1. & 2. Places APIでの検索とAIによる一次フィルタリング (変更なし)
     const searchResults: RestaurantCandidate[] = await textSearchNew(criteriaForAI);
     if (!searchResults || searchResults.length === 0) {
       return { error: `指定された条件（場所: ${criteriaForAI.location}, 料理: ${criteriaForAI.cuisine}）に一致するレストランが見つかりませんでした。` };
     }
 
-    // 2.【一次判定AI】レビューサマリーを基に、グループ利用に適したレストランを5件まで絞り込む
     const filteredPlaceIds = await filterRestaurantsForGroup({
       restaurants: searchResults,
-      criteria: criteriaForAI, // Pass string date here
+      criteria: criteriaForAI,
     });
     
     if (!filteredPlaceIds || filteredPlaceIds.length === 0) {
       return { error: "AIによる一次判定で、グループ向けのお店が見つかりませんでした。条件を変えてお試しください。"};
     }
 
-    // 3. 絞り込んだ候補の詳細情報を並列で取得する (写真抜き)
-    const detailPromises = filteredPlaceIds.map(id => getRestaurantDetails(id));
-    const detailedCandidates = (await Promise.all(detailPromises)).filter(Boolean); // nullを除外
+    // ★★★ここからが変更箇所★★★
+    // 3. 絞り込んだ候補の詳細情報を【Firestoreキャッシュ優先で】取得する
+    console.log("Fetching details with cache-first strategy...");
+    const detailPromises = filteredPlaceIds.map(async (id) => {
+      const docRef = adminDb.collection("shinjuku-places").doc(id);
+      const docSnap = await docRef.get();
+
+      if (docSnap.exists) {
+        // 【キャッシュヒット】
+        console.log(`Cache HIT for placeId: ${id}`);
+        // FirestoreのデータをRestaurantDetails型に変換
+        const cachedData = docSnap.data();
+        // FirestoreのTimestampをDateオブジェクトに変換してから利用する
+        // 必要に応じて他のフィールドも型変換
+        return { ...cachedData, updatedAt: cachedData.updatedAt.toDate() } as RestaurantDetails;
+
+      } else {
+        // 【キャッシュミス】
+        console.log(`Cache MISS for placeId: ${id}. Fetching from API...`);
+        const details = await getRestaurantDetails(id);
+        if (details) {
+          // Firestoreに保存（キャッシュ）する
+          // DBにはサーバーのタイムスタンプを保存する
+          await docRef.set({
+            ...details,
+            updatedAt: Timestamp.now(), // サーバーサイドの現在時刻を保存
+          });
+          console.log(`Saved new data to Firestore for placeId: ${id}`);
+        }
+        return details;
+      }
+    });
+    // ★★★ここまでが変更箇所★★★
+
+    const detailedCandidates = (await Promise.all(detailPromises)).filter((c): c is NonNullable<typeof c> => c !== null);
 
     if (detailedCandidates.length === 0) {
       return { error: "候補レストランの詳細情報の取得・分析に失敗しました。"};
     }
 
-    // 4.【最終選定・分析AI】最も優れた候補をAIに【3件】選ばせ、分析と推薦文を生成させる
-    const top3Analyses = await selectAndAnalyzeBestRestaurants({ // 複数件取得するフローを呼び出し
+    // 4. 以降の処理は変更なし
+    console.log("Running final analysis on detailed candidates...");
+    const top3Analyses = await selectAndAnalyzeBestRestaurants({
       candidates: detailedCandidates,
-      criteria: criteriaForAI, // Pass string date here
+      criteria: criteriaForAI,
     });
 
     if (!top3Analyses || top3Analyses.length === 0) {
-        return { error: "AIによる最終候補の選定に失敗しました。"}
+        return { error: "AIによる最終候補の選定に失敗しました。" };
     }
 
-    // 5.【写真情報の追加取得】AIが選んだ3件のレストランの写真URLを効率的に取得
     const finalResults: RecommendationResult[] = await Promise.all(
         top3Analyses.map(async (result) => {
-            // AIの分析結果からplaceIdを見つける (candidatesからnameで検索)
             const correspondingCandidate = detailedCandidates.find(c => c.name === result.suggestion.restaurantName);
             const placeId = correspondingCandidate?.id;
             
@@ -74,31 +105,20 @@ export async function getRestaurantSuggestion(
 
             return {
                 ...result,
-                placeId: placeId || '', // keyとして利用するためにIDを付与
-                criteria, // Return original criteria (with Date object) to frontend
+                placeId: placeId || '',
+                criteria,
                 photoUrl,
             };
         })
     );
 
-    // 6. 最終結果(3件分の配列)をフロントエンドに返す
     return { data: finalResults };
 
   } catch (e) {
-    // 7. 処理中に何らかのエラーが発生した場合の処理
     console.error("Error in getRestaurantSuggestion:", e);
-    // エラー内容に応じてユーザーフレンドリーなメッセージに変換
     let errorMessage = e instanceof Error ? e.message : "AIの処理またはGoogle Places APIの呼び出し中に不明なエラーが発生しました。";
-    if (errorMessage.includes("API key not valid") || errorMessage.includes("API_KEY_INVALID")) {
-        errorMessage = "Google Places APIキーが無効です。設定を確認してください。";
-    } else if (errorMessage.includes("Quota exceeded") || errorMessage.includes("OVER_QUERY_LIMIT")) {
-        errorMessage = "Google Places APIの利用上限を超えました。しばらくしてから再試行するか、利用枠を確認してください。";
-    } else if (errorMessage.includes("REQUEST_DENIED")) {
-        errorMessage = "Google Places APIへのリクエストが拒否されました。APIキーや設定、利用規約を確認してください。";
-    } else if (errorMessage.includes("deadline")) {
-       errorMessage = "AIまたは外部APIの応答時間が長すぎました。しばらくしてからもう一度お試しください。";
-    } else if (errorMessage.includes("INVALID_ARGUMENT") && errorMessage.includes("criteria.date")) {
-        errorMessage = "日付の形式に問題がある可能性があります。AIフローが期待する日付形式を確認してください。";
+    if (errorMessage.includes("permission-denied") || errorMessage.includes("PERMISSION_DENIED")) {
+        errorMessage = "データベースへの書き込み権限がありません。Firebase Admin SDKのサービスアカウントキーの設定を確認してください。";
     }
     return { error: `処理中にエラーが発生しました: ${errorMessage}` };
   }
