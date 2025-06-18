@@ -2,111 +2,97 @@
 import admin from "firebase-admin";
 import type { ServiceAccount as FirebaseAdminServiceAccountType } from "firebase-admin";
 
-// Interface for the actual structure of the parsed JSON (which uses snake_case)
-interface ParsedServiceAccountJson {
-  type?: string;
-  project_id?: string;
-  private_key_id?: string;
-  private_key?: string;
-  client_email?: string;
-  client_id?: string;
-  auth_uri?: string;
-  token_uri?: string;
-  auth_provider_x509_cert_url?: string;
-  client_x509_cert_url?: string;
-  universe_domain?: string;
-  [key: string]: any; // Allow other properties that might exist
+console.log("Attempting to initialize Firebase Admin SDK using 3-variable method from .env.local...");
+
+const projectId = process.env.FIREBASE_PROJECT_ID;
+const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+const privateKeyFromEnv = process.env.FIREBASE_PRIVATE_KEY;
+
+let criticalError = false;
+const detailedErrorMessages: string[] = [];
+
+if (!projectId) {
+    const msg = "CRITICAL FAILURE: Environment variable FIREBASE_PROJECT_ID is not set. This is required for Firebase Admin SDK initialization using the 3-variable method. Please check your .env.local file.";
+    console.error(msg);
+    detailedErrorMessages.push(msg);
+    criticalError = true;
+} else {
+    console.log("FIREBASE_PROJECT_ID environment variable found.");
 }
 
-console.log("Attempting to initialize Firebase Admin SDK...");
-
-const serviceAccountJsonString = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
-
-if (!serviceAccountJsonString || typeof serviceAccountJsonString !== 'string' || serviceAccountJsonString.trim() === '') {
-    const errorMessage = "CRITICAL FAILURE: Environment variable FIREBASE_SERVICE_ACCOUNT_JSON is not set or is empty. This is required for Firebase Admin SDK initialization. Please check your .env.local file.";
-    console.error(errorMessage);
-    throw new Error(errorMessage);
-}
-console.log("FIREBASE_SERVICE_ACCOUNT_JSON environment variable found.");
-
-let parsedJson: ParsedServiceAccountJson;
-try {
-    parsedJson = JSON.parse(serviceAccountJsonString);
-    console.log("Successfully parsed FIREBASE_SERVICE_ACCOUNT_JSON string.");
-} catch (e: any) {
-    const errorMessage = `CRITICAL FAILURE: Failed to parse FIREBASE_SERVICE_ACCOUNT_JSON. Please ensure it's a valid JSON string and private_key newlines are correctly escaped as \\\\n. Raw Error: ${e.message}`;
-    console.error(errorMessage);
-    console.error("Value of FIREBASE_SERVICE_ACCOUNT_JSON that failed to parse (first 100 chars):", serviceAccountJsonString.substring(0,100) + "...");
-    throw new Error(errorMessage);
+if (!clientEmail) {
+    const msg = "CRITICAL FAILURE: Environment variable FIREBASE_CLIENT_EMAIL is not set. This is required for Firebase Admin SDK initialization using the 3-variable method. Please check your .env.local file.";
+    console.error(msg);
+    detailedErrorMessages.push(msg);
+    criticalError = true;
+} else {
+    console.log("FIREBASE_CLIENT_EMAIL environment variable found.");
 }
 
-if (typeof parsedJson !== 'object' || parsedJson === null) {
-    const errorMessage = "CRITICAL FAILURE: Parsed FIREBASE_SERVICE_ACCOUNT_JSON is not a valid object. It resolved to: " + String(parsedJson);
-    console.error(errorMessage);
-    throw new Error(errorMessage);
+if (!privateKeyFromEnv) {
+    const msg = "CRITICAL FAILURE: Environment variable FIREBASE_PRIVATE_KEY is not set. This is required for Firebase Admin SDK initialization using the 3-variable method. Please check your .env.local file.";
+    console.error(msg);
+    detailedErrorMessages.push(msg);
+    criticalError = true;
+} else {
+    console.log("FIREBASE_PRIVATE_KEY environment variable found (content not logged for security).");
 }
-console.log("Parsed FIREBASE_SERVICE_ACCOUNT_JSON is an object.");
 
-const requiredSnakeCaseKeys: (keyof ParsedServiceAccountJson)[] = ['project_id', 'private_key', 'client_email'];
-const missingKeys = requiredSnakeCaseKeys.filter(key => !(key in parsedJson) || !parsedJson[key]);
+if (criticalError) {
+    const finalErrorMessage = `CRITICAL FAILURE: One or more required Firebase Admin environment variables (FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY) are missing. Details: ${detailedErrorMessages.join('; ')}`;
+    // This error will be thrown and should appear in server logs if this script is loaded during startup.
+    // If loaded lazily (e.g., in a server action), it might manifest as an Internal Server Error to the client.
+    console.error("THROWING ERROR:", finalErrorMessage);
+    throw new Error(finalErrorMessage);
+}
 
-if (missingKeys.length > 0) {
-    const errorMessage = `CRITICAL FAILURE: Parsed FIREBASE_SERVICE_ACCOUNT_JSON is missing or has empty values for required snake_case keys: ${missingKeys.join(', ')}. Please check the content of this variable in your .env.local file.`;
-    console.error(errorMessage);
-    console.error("Parsed object for debugging (excluding private_key):", { ...parsedJson, private_key: "[REDACTED]"});
-    throw new Error(errorMessage);
-}
-console.log("All required snake_case keys (project_id, private_key, client_email) are present and non-empty in the parsed service account JSON.");
+const formattedPrivateKey = privateKeyFromEnv?.replace(/\\n/g, '\n');
 
-// Validate types of crucial fields from the parsed JSON (using snake_case keys)
-if (typeof parsedJson.project_id !== 'string') {
-    const errorMessage = `CRITICAL FAILURE: 'project_id' in parsed FIREBASE_SERVICE_ACCOUNT_JSON is not a string. Current type: ${typeof parsedJson.project_id}. Value: ${parsedJson.project_id}`;
-    console.error(errorMessage);
-    throw new Error(errorMessage);
+if (!formattedPrivateKey || typeof formattedPrivateKey !== 'string' || !formattedPrivateKey.startsWith('-----BEGIN PRIVATE KEY-----') || !formattedPrivateKey.endsWith('-----END PRIVATE KEY-----\n')) {
+    const msg = `CRITICAL FAILURE: The FIREBASE_PRIVATE_KEY environment variable content appears to be malformed or not a valid private key string. It must start with '-----BEGIN PRIVATE KEY-----' and end with '-----END PRIVATE KEY-----\\n', with actual newlines represented as '\\n' in the .env.local file. Ensure the .env.local value for FIREBASE_PRIVATE_KEY is enclosed in double quotes if it contains special characters, and all internal newlines are '\\n'. Current (obfuscated) start: ${formattedPrivateKey?.substring(0,20)}... Current (obfuscated) end: ...${formattedPrivateKey?.slice(-20)}`;
+    console.error(msg);
+    detailedErrorMessages.push(msg);
+    // This error will be thrown.
+    console.error("THROWING ERROR:", msg);
+    throw new Error(msg);
 }
-if (typeof parsedJson.private_key !== 'string') {
-     const errorMessage = `CRITICAL FAILURE: 'private_key' in parsed FIREBASE_SERVICE_ACCOUNT_JSON is not a string. Current type: ${typeof parsedJson.private_key}. Ensure newlines are escaped as \\\\n. Value (first 30 chars): ${String(parsedJson.private_key).substring(0,30)}...`;
-    console.error(errorMessage);
-    throw new Error(errorMessage);
-}
-if (typeof parsedJson.client_email !== 'string') {
-    const errorMessage = `CRITICAL FAILURE: 'client_email' in parsed FIREBASE_SERVICE_ACCOUNT_JSON is not a string. Current type: ${typeof parsedJson.client_email}. Value: ${parsedJson.client_email}`;
-    console.error(errorMessage);
-    throw new Error(errorMessage);
-}
-console.log("Data types for project_id, private_key, and client_email are correct in the parsed JSON.");
 
-// Transform the parsed snake_case object to the camelCase object expected by FirebaseAdminServiceAccountType
 const serviceAccountForSdk: FirebaseAdminServiceAccountType = {
-    projectId: parsedJson.project_id,
-    clientEmail: parsedJson.client_email,
-    privateKey: parsedJson.private_key?.replace(/\\n/g, '\n'), // Ensure private key newlines are actual newlines for the SDK
+  projectId: projectId!,
+  clientEmail: clientEmail!,
+  privateKey: formattedPrivateKey!,
 };
 
 if (!admin.apps.length) {
   try {
-    console.log("No existing Firebase app found, attempting to initialize with transformed (camelCase) credentials...");
+    console.log("No existing Firebase app found, attempting to initialize with credentials from 3 environment variables...");
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccountForSdk),
     });
-    console.log("✅ Firebase Admin SDK initialized successfully from FIREBASE_SERVICE_ACCOUNT_JSON environment variable!");
+    console.log("✅ Firebase Admin SDK initialized successfully using 3 environment variables from .env.local!");
   } catch (error: any) {
-    let detailedErrorMessage = `FATAL ERROR: Firebase Admin SDK initializeApp failed. Raw Error Name: ${error.name}, Message: ${error.message}.`;
+    let sdkInitErrorMessage = `FATAL ERROR: Firebase Admin SDK initializeApp failed when using 3-variable method. Raw Error Name: ${error.name}, Message: ${error.message}.`;
     if (error.message && (error.message.toLowerCase().includes("privatekey") || error.message.toLowerCase().includes("private_key"))) {
-        detailedErrorMessage += " This often indicates an issue with the format of 'private_key' (e.g., newlines not properly escaped as \\\\n in the .env file, or the key itself is malformed even after transformation).";
+        sdkInitErrorMessage += " This often indicates an issue with the format or content of 'FIREBASE_PRIVATE_KEY' (e.g., newlines not properly formatted as '\\n' in the .env.local, or the key itself is malformed/corrupted).";
     } else if (error.code === 'app/invalid-credential' || (error.errorInfo && error.errorInfo.code === 'auth/invalid-credential')) {
-        detailedErrorMessage += " The credential object itself is invalid. Double-check all fields in your service account JSON, especially project_id and client_email after transformation.";
+        sdkInitErrorMessage += " The credential object itself is invalid. Double-check all three environment variables: FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, and FIREBASE_PRIVATE_KEY in your .env.local file.";
+    } else if (error.message && error.message.includes("Error: error:0909006C:PEM routines:get_name:no start line")) {
+        sdkInitErrorMessage += " This specific PEM routine error strongly suggests the private key is not correctly formatted. Ensure it starts with '-----BEGIN PRIVATE KEY-----' and ends with '-----END PRIVATE KEY-----\\n' and that newlines within the key are correctly represented as '\\n' in your .env.local file string value.";
+    } else {
+        sdkInitErrorMessage += " This could be due to various reasons including network issues, incorrect project settings, or malformed credential data. Check the specific error message above.";
     }
-    console.error(detailedErrorMessage);
+    console.error(sdkInitErrorMessage);
     if (error.stack) {
         console.error("Error Stack:", error.stack);
     }
-    console.error("Service account object passed to admin.credential.cert() (camelCase, excluding privateKey):", { ...serviceAccountForSdk, privateKey: "[REDACTED FOR LOGGING]"});
-    throw new Error(detailedErrorMessage);
+    console.error("Service account object passed to admin.credential.cert() (excluding privateKey):", { projectId: serviceAccountForSdk.projectId, clientEmail: serviceAccountForSdk.clientEmail, privateKey: "[REDACTED FOR LOGGING]"});
+    // This error will be thrown.
+    console.error("THROWING ERROR:", sdkInitErrorMessage);
+    throw new Error(sdkInitErrorMessage);
   }
 } else {
-  console.log("Firebase Admin SDK already initialized. Reusing existing instance.");
+  console.log("Firebase Admin SDK already initialized (3-variable method). Reusing existing instance.");
 }
 
 export const adminDb = admin.firestore();
-console.log("Firebase Admin SDK setup complete. adminDb exported.");
+console.log("Firebase Admin SDK setup complete (3-variable method). adminDb exported.");
