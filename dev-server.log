@@ -48,3 +48,69 @@ Error in getRestaurantSuggestion: Error: Value for argument "data" is not a vali
  [32m[1m✓[22m[39m Compiled in 183ms
  [32m[1m✓[22m[39m Compiled / in 132ms
  GET / [32m200[39m in 1473ms
+ GET / [32m200[39m in 213ms
+Step 1: Starting Places API search (textSearchNew)...
+Found 20 initial candidates from Places API.
+Step 2: Applying mechanical filtering and scoring logic...
+--- Scored & Filtered Candidates (Top scores first) ---
+ID: ChIJz6hc6SmNGGARJfjTWT9486g, Name: 肉ビストロ灯, Rating: 4.6, Reviews: 624, Types: restaurant, point_of_interest, food, establishment, Price: PRICE_LEVEL_MODERATE, Total Score: 89.23
+ID: ChIJI3g8mIWNGGARISIXBZSYsSo, Name: Nice to meet cheese 新宿三丁目店, Rating: 4.1, Reviews: 304, Types: japanese_restaurant, restaurant, point_of_interest, food, establishment, Price: undefined, Total Score: 75.77
+ID: ChIJ___zrteMGGARA0tRi6bv9zI, Name: ワインの酒場。ディプント 新宿西口店, Rating: 3.9, Reviews: 271, Types: pizza_restaurant, liquor_store, italian_restaurant, japanese_restaurant, restaurant, point_of_interest, food, store, establishment, Price: PRICE_LEVEL_MODERATE, Total Score: 66.63
+----------------------------------------------------
+Mechanical filtering narrowed down to 3 candidates.
+Selected top 3 candidates for fetching details.
+Step 3: Fetching details for top candidates (cache-first strategy)...
+[CACHE HIT] Firestore: Fetched '肉ビストロ灯' (ID: ChIJz6hc6SmNGGARJfjTWT9486g) from shinjuku-places.
+[CACHE MISS] Firestore: No data for ID: ChIJI3g8mIWNGGARISIXBZSYsSo in shinjuku-places. Fetching from API...
+[CACHE HIT] Firestore: Fetched 'ワインの酒場。ディプント 新宿西口店' (ID: ChIJ___zrteMGGARA0tRi6bv9zI) from shinjuku-places.
+file:///home/user/studio/node_modules/@google-cloud/firestore/build/src/serializer.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: TypeError [ERR_INVALID_ARG_TYPE]: The "payload" argument must be of type object. Received null
+file:///home/user/studio/node_modules/@google-cloud/firestore/build/src/write-batch.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: TypeError [ERR_INVALID_ARG_TYPE]: The "payload" argument must be of type object. Received null
+file:///home/user/studio/node_modules/@google-cloud/firestore/build/src/reference/document-reference.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: TypeError [ERR_INVALID_ARG_TYPE]: The "payload" argument must be of type object. Received null
+file:///home/user/studio/node_modules/@google-cloud/firestore/build/src/telemetry/enabled-trace-util.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: TypeError [ERR_INVALID_ARG_TYPE]: The "payload" argument must be of type object. Received null
+Error in getRestaurantSuggestion: Error: Value for argument "data" is not a valid Firestore document. Cannot use "undefined" as a Firestore value (found in field "priceLevel"). If you want to ignore undefined values, enable `ignoreUndefinedProperties`.
+    at <unknown> (src/app/actions.ts:221:23)
+    at async getRestaurantSuggestion (src/app/actions.ts:231:42)
+[0m [90m 219 |[39m             category[33m:[39m [32m"restaurant"[39m[33m,[39m [0m
+[0m [90m 220 |[39m           }[33m;[39m[0m
+[0m[31m[1m>[22m[39m[90m 221 |[39m           [36mawait[39m docRef[33m.[39m[36mset[39m(firestoreDocData)[33m;[39m[0m
+[0m [90m     |[39m                       [31m[1m^[22m[39m[0m
+[0m [90m 222 |[39m           console[33m.[39mlog([32m`[CACHE SAVE] Firestore: Saved '${detailsFromApi.name}' (ID: ${id}) to shinjuku-places.`[39m)[33m;[39m[0m
+[0m [90m 223 |[39m           [36mreturn[39m detailsFromApi[33m;[39m[0m
+[0m [90m 224 |[39m         } [36melse[39m {[0m
+ POST / [32m200[39m in 1319ms
+ GET /?monospaceUid=0 [32m200[39m in 2138ms
+ GET /?monospaceUid=491852 [32m200[39m in 2900ms
+ [33m[1m⚠[22m[39m Cross origin request detected from 9000-firebase-studio-1749405167197.cluster-fdkw7vjj7bgguspe3fbbc25tra.cloudworkstations.dev to /_next/* resource. In a future major version of Next.js, you will need to explicitly configure "allowedDevOrigins" in next.config to allow this.
+Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allowedDevOrigins
+Step 1: Starting Places API search (textSearchNew)...
+Found 20 initial candidates from Places API.
+Step 2: Applying mechanical filtering and scoring logic...
+--- Scored & Filtered Candidates (Top scores first) ---
+ID: ChIJz6hc6SmNGGARJfjTWT9486g, Name: 肉ビストロ灯, Rating: 4.6, Reviews: 624, Types: restaurant, food, point_of_interest, establishment, Price: PRICE_LEVEL_MODERATE, Total Score: 89.23
+ID: ChIJI3g8mIWNGGARISIXBZSYsSo, Name: Nice to meet cheese 新宿三丁目店, Rating: 4.1, Reviews: 304, Types: japanese_restaurant, restaurant, food, point_of_interest, establishment, Price: undefined, Total Score: 75.77
+ID: ChIJ___zrteMGGARA0tRi6bv9zI, Name: ワインの酒場。ディプント 新宿西口店, Rating: 3.9, Reviews: 271, Types: pizza_restaurant, liquor_store, italian_restaurant, japanese_restaurant, restaurant, food, point_of_interest, store, establishment, Price: PRICE_LEVEL_MODERATE, Total Score: 66.63
+----------------------------------------------------
+Mechanical filtering narrowed down to 3 candidates.
+Selected top 3 candidates for fetching details.
+Step 3: Fetching details for top candidates (cache-first strategy)...
+[CACHE HIT] Firestore: Fetched '肉ビストロ灯' (ID: ChIJz6hc6SmNGGARJfjTWT9486g) from shinjuku-places.
+[CACHE MISS] Firestore: No data for ID: ChIJI3g8mIWNGGARISIXBZSYsSo in shinjuku-places. Fetching from API...
+[CACHE HIT] Firestore: Fetched 'ワインの酒場。ディプント 新宿西口店' (ID: ChIJ___zrteMGGARA0tRi6bv9zI) from shinjuku-places.
+file:///home/user/studio/node_modules/@google-cloud/firestore/build/src/serializer.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: TypeError [ERR_INVALID_ARG_TYPE]: The "payload" argument must be of type object. Received null
+file:///home/user/studio/node_modules/@google-cloud/firestore/build/src/write-batch.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: TypeError [ERR_INVALID_ARG_TYPE]: The "payload" argument must be of type object. Received null
+file:///home/user/studio/node_modules/@google-cloud/firestore/build/src/reference/document-reference.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: TypeError [ERR_INVALID_ARG_TYPE]: The "payload" argument must be of type object. Received null
+file:///home/user/studio/node_modules/@google-cloud/firestore/build/src/telemetry/enabled-trace-util.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: TypeError [ERR_INVALID_ARG_TYPE]: The "payload" argument must be of type object. Received null
+Error in getRestaurantSuggestion: Error: Value for argument "data" is not a valid Firestore document. Cannot use "undefined" as a Firestore value (found in field "priceLevel"). If you want to ignore undefined values, enable `ignoreUndefinedProperties`.
+    at <unknown> (src/app/actions.ts:221:23)
+    at async getRestaurantSuggestion (src/app/actions.ts:231:42)
+[0m [90m 219 |[39m             category[33m:[39m [32m"restaurant"[39m[33m,[39m [0m
+[0m [90m 220 |[39m           }[33m;[39m[0m
+[0m[31m[1m>[22m[39m[90m 221 |[39m           [36mawait[39m docRef[33m.[39m[36mset[39m(firestoreDocData)[33m;[39m[0m
+[0m [90m     |[39m                       [31m[1m^[22m[39m[0m
+[0m [90m 222 |[39m           console[33m.[39mlog([32m`[CACHE SAVE] Firestore: Saved '${detailsFromApi.name}' (ID: ${id}) to shinjuku-places.`[39m)[33m;[39m[0m
+[0m [90m 223 |[39m           [36mreturn[39m detailsFromApi[33m;[39m[0m
+[0m [90m 224 |[39m         } [36melse[39m {[0m
+ POST /?monospaceUid=491852 [32m200[39m in 1160ms
+ [32m[1m✓[22m[39m Compiled in 1185ms
+ [32m[1m✓[22m[39m Compiled / in 19ms
+ GET / [32m200[39m in 2809ms

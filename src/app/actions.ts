@@ -69,14 +69,14 @@ const calculateRatingScore = (rating?: number): number => {
 
 const calculateReviewCountScore = (userRatingCount?: number): number => {
   if (userRatingCount === undefined || userRatingCount < 30) return 0;
-  const score = ((userRatingCount - 30) / (300 - 30)) * 35; // Assuming 300 reviews for max score
+  const score = ((userRatingCount - 30) / (300 - 30)) * 35; 
   return Math.min(Math.max(score, 0), 35);
 };
 
 const calculateCategoryScore = (types?: string[]): number => {
   if (!types || types.length === 0) return 0;
   if (types.some(type => ["clothing_store", "electronics_store"].includes(type))) {
-    return -50; // Heavily penalize non-dining places
+    return -50; 
   }
   if (types.some(type => ["restaurant", "izakaya_restaurant", "food"].includes(type))) {
     return 30;
@@ -87,6 +87,17 @@ const calculateCategoryScore = (types?: string[]): number => {
   return 0;
 };
 
+// Helper function to remove undefined properties from an object before saving to Firestore
+function cleanUndefinedProps(obj: any) {
+  const newObj: any = {};
+  for (const key in obj) {
+    if (obj[key] !== undefined) {
+      newObj[key] = obj[key];
+    }
+  }
+  return newObj;
+}
+
 
 export async function getRestaurantSuggestion(
   criteria: RestaurantCriteria
@@ -95,9 +106,8 @@ export async function getRestaurantSuggestion(
     const criteriaForAI = {
         ...criteria,
         date: format(new Date(criteria.date), 'yyyy-MM-dd'),
-        // customPromptPersona and customPromptPriorities might be undefined if not in development
-        customPromptPersona: criteria.customPromptPersona,
-        customPromptPriorities: criteria.customPromptPriorities,
+        customPromptPersona: process.env.NODE_ENV === 'development' ? criteria.customPromptPersona : undefined,
+        customPromptPriorities: process.env.NODE_ENV === 'development' ? criteria.customPromptPriorities : undefined,
     };
 
     console.log("Step 1: Starting Places API search (textSearchNew)...");
@@ -155,7 +165,6 @@ export async function getRestaurantSuggestion(
       if (docSnap.exists) {
         const cachedData = docSnap.data() as FirestoreRestaurantDetails;
         console.log(`[CACHE HIT] Firestore: Fetched '${cachedData?.displayName}' (ID: ${id}) from shinjuku-places.`);
-        // Transform Firestore data to ApiRestaurantDetails structure for consistency
         return {
             id: cachedData.id,
             name: cachedData.displayName, 
@@ -166,18 +175,18 @@ export async function getRestaurantSuggestion(
                 name: p.name,
                 widthPx: p.widthPx,
                 heightPx: p.heightPx,
-                authorAttributions: [], // Not stored in Firestore per user's request
+                authorAttributions: [], 
             })),
             reviews: cachedData.reviews?.map(r => ({
                 rating: r.rating,
                 text: r.text ? { text: r.text, languageCode: r.languageCode || 'ja' } : undefined,
-                originalText: r.text ? { text: r.text, languageCode: r.languageCode || 'ja' } : undefined, // Keep if needed for other parts
-                authorAttribution: r.authorName ? { displayName: r.authorName, uri:'', photoUri:''} : undefined, // API structure
-                publishTime: r.publishTime, // API structure
+                originalText: r.text ? { text: r.text, languageCode: r.languageCode || 'ja' } : undefined, 
+                authorAttribution: r.authorName ? { displayName: r.authorName, uri:'', photoUri:''} : undefined, 
+                publishTime: r.publishTime, 
             })),
             websiteUri: cachedData.websiteUri,
             googleMapsUri: cachedData.googleMapsUri,
-            internationalPhoneNumber: cachedData.nationalPhoneNumber, // Use national for consistency if that's what API expects
+            internationalPhoneNumber: cachedData.nationalPhoneNumber, 
             regularOpeningHours: cachedData.weekdayDescriptions ? { weekdayDescriptions: cachedData.weekdayDescriptions } : undefined,
             types: cachedData.types,
             priceLevel: cachedData.priceLevel,
@@ -187,10 +196,9 @@ export async function getRestaurantSuggestion(
         const detailsFromApi = await getRestaurantDetails(id);
         if (detailsFromApi) {
           const now = Timestamp.now();
-          // Transform API data to FirestoreRestaurantDetails structure
-          const firestoreDocData: FirestoreRestaurantDetails = {
+          const firestoreDocDataBase: FirestoreRestaurantDetails = {
             id: detailsFromApi.id,
-            displayName: detailsFromApi.name, // Use name from API
+            displayName: detailsFromApi.name, 
             formattedAddress: detailsFromApi.formattedAddress,
             rating: detailsFromApi.rating,
             userRatingCount: detailsFromApi.userRatingCount,
@@ -198,18 +206,17 @@ export async function getRestaurantSuggestion(
               name: p.name,
               widthPx: p.widthPx,
               heightPx: p.heightPx,
-              // authorAttributions is not saved per previous request
             })),
             reviews: (detailsFromApi.reviews || []).map((r: ApiPlaceReview) => ({
-              authorName: r.authorAttribution?.displayName, // Save authorName
+              authorName: r.authorAttribution?.displayName, 
               languageCode: r.text?.languageCode,
-              publishTime: r.publishTime, // Save publishTime
+              publishTime: r.publishTime, 
               rating: r.rating,
               text: r.text?.text,
             })),
             websiteUri: detailsFromApi.websiteUri,
             googleMapsUri: detailsFromApi.googleMapsUri,
-            nationalPhoneNumber: detailsFromApi.internationalPhoneNumber, // Save as nationalPhoneNumber
+            nationalPhoneNumber: detailsFromApi.internationalPhoneNumber, 
             weekdayDescriptions: detailsFromApi.regularOpeningHours?.weekdayDescriptions,
             types: detailsFromApi.types,
             priceLevel: detailsFromApi.priceLevel,
@@ -218,6 +225,7 @@ export async function getRestaurantSuggestion(
             isActive: true,
             category: "restaurant", 
           };
+          const firestoreDocData = cleanUndefinedProps(firestoreDocDataBase);
           await docRef.set(firestoreDocData);
           console.log(`[CACHE SAVE] Firestore: Saved '${detailsFromApi.name}' (ID: ${id}) to shinjuku-places.`);
           return detailsFromApi;
@@ -358,3 +366,4 @@ export async function getRestaurantSuggestion(
     
 
     
+
