@@ -1,4 +1,3 @@
-
 # Settings to manage and configure a Firebase App Hosting backend.
 # https://firebase.google.com/docs/app-hosting/configure
 
@@ -43,12 +42,11 @@ secretEnvironmentVariables:
     version: latest
 
 runConfig:
-  # Increase this value if you'd like to automatically spin up
-  # more instances in response to increased traffic.
   maxInstances: 1
   # For non-secret runtime environment variables, you can define them here:
-  # environmentVariables:
-  #   SOME_RUNTIME_VAR: "value"
+  environmentVariables:
+    TEST_VAR_DIRECT: "HelloFromApphostingYAML" # Test variable added
+    ANOTHER_TEST_VAR: "ThisIsAlsoATest"       # Another test variable
 
 # buildConfig:
   # For non-secret build-time environment variables, you can define them here:
