@@ -938,3 +938,37 @@ MI...
 ✅ [firebase-admin.ts] Firebase Admin SDK initialized successfully!
 [firebase-admin.ts] Module finished loading.
  GET / [32m200[39m in 3001ms
+ GET /?monospaceUid=498294 [32m200[39m in 336ms
+Step 1 & 2: Starting Places API search and AI primary filtering...
+Found 10 initial candidates from Places API.
+AI primary filtering narrowed down to 1 candidates: ChIJFTK8FNqMGGARuPBL2ZwejjQ
+Step 3: Fetching details for filtered candidates (cache-first strategy)...
+[CACHE HIT] Firestore: Fetched '個室 創作和食 ワイン 縁 新宿店' (ID: ChIJFTK8FNqMGGARuPBL2ZwejjQ) from shinjuku-places.
+Successfully fetched/retrieved details for 1 candidates for AI analysis.
+Step 4: Running final AI analysis on detailed candidates...
+Calling analyzeRestaurantReviews (for Kanji) for: 個室 創作和食 ワイン 縁 新宿店
+Returning 1 final recommendations from skilled secretary.
+AI selected 1 final recommendations.
+Step 5: Fetching photo URLs and formatting final results...
+All steps completed. Returning final recommendations to client.
+ POST /?monospaceUid=498294 [32m200[39m in 5126ms
+ [32m[1m✓[22m[39m Compiled in 327ms
+ [32m[1m✓[22m[39m Compiled / in 126ms
+[firebase-admin.ts] Module starting to load. Timestamp: 2025-06-19T14:13:20.004Z
+[firebase-admin.ts] NODE_ENV: development
+[firebase-admin.ts] --- Checking Key Environment Variables ---
+[firebase-admin.ts] FIREBASE_PROJECT_ID: EXISTS (length: 17)
+[firebase-admin.ts] FIREBASE_CLIENT_EMAIL: EXISTS (length: 65)
+[firebase-admin.ts] FIREBASE_PRIVATE_KEY: EXISTS (length: 1704, preview: -----BEGIN PRIVATE K...)
+[firebase-admin.ts] GOOGLE_PLACES_API_KEY: EXISTS (length: 39)
+[firebase-admin.ts] GEMINI_API_KEY: EXISTS (length: 39)
+[firebase-admin.ts] NEXT_PUBLIC_FIREBASE_API_KEY: EXISTS (length: 39)
+[firebase-admin.ts] NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: EXISTS (length: 33)
+[firebase-admin.ts] NEXT_PUBLIC_FIREBASE_PROJECT_ID: EXISTS (length: 17)
+[firebase-admin.ts] NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: EXISTS (length: 37)
+[firebase-admin.ts] NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: EXISTS (length: 11)
+[firebase-admin.ts] NEXT_PUBLIC_FIREBASE_APP_ID: EXISTS (length: 40)
+[firebase-admin.ts] --- Finished Checking Key Environment Variables ---
+[firebase-admin.ts] Firebase admin app already initialized. Reusing existing instance.
+[firebase-admin.ts] Module finished loading.
+ GET / [32m200[39m in 3073ms
