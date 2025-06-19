@@ -9,44 +9,44 @@ import {
     buildPhotoUrl,
     textSearchNew,
     type RestaurantCandidate,
-    type PlaceReview as ApiPlaceReview, // APIのレビュー型を明確にエイリアス
-    type PlacePhoto as ApiPlacePhoto,   // APIの写真型を明確にエイリアス
+    type PlaceReview as ApiPlaceReview,
+    type PlacePhoto as ApiPlacePhoto,
     type RestaurantDetails as ApiRestaurantDetails
 } from "@/services/google-places-service";
 import { format } from "date-fns";
 import { adminDb } from "@/lib/firebase-admin";
 import { Timestamp } from "firebase-admin/firestore";
 
-// Firestoreに保存する際の写真オブジェクトの型 (既存DB構成に合わせる)
+// Firestoreに保存する際の写真オブジェクトの型
 interface FirestorePlacePhoto {
   name: string;
   widthPx: number;
   heightPx: number;
-  // authorAttributions は含めない
+  // authorAttributions は保存しない
 }
 
-// Firestoreに保存する際のレビューオブジェクトの型 (既存DB構成に合わせる)
+// Firestoreに保存する際のレビューオブジェクトの型
 interface FirestorePlaceReview {
-  authorName?: string;
-  languageCode?: string;
-  publishTime?: string; // ISO 8601 string
+  authorName?: string;      // authorAttribution.displayName から
+  languageCode?: string;    // text.languageCode から
+  publishTime?: string;     // review.publishTime (ISO string) から
   rating: number;
-  text?: string;
-  // review.name (リソース名) や relativePublishTimeDescription は含めない
+  text?: string;            // text.text から
+  // review.name (リソース名) や relativePublishTimeDescription は保存しない
 }
 
-// Firestoreの "shinjuku-places" コレクションのドキュメント構造 (既存DB構成に合わせる)
+// Firestoreの "shinjuku-places" コレクションのドキュメント構造
 interface FirestoreRestaurantDetails {
-  id: string; // Google Place ID
-  displayName: string; // レストラン名 (name から変更)
+  id: string;
+  displayName: string; // APIのnameから変更
   formattedAddress?: string;
   rating?: number;
   userRatingCount?: number;
-  photos: FirestorePlacePhoto[]; // 整形後の写真配列
-  reviews: FirestorePlaceReview[];  // 整形後のレビュー配列
+  photos: FirestorePlacePhoto[];
+  reviews: FirestorePlaceReview[];
   websiteUri?: string;
   googleMapsUri?: string;
-  nationalPhoneNumber?: string; // internationalPhoneNumber から変更
+  nationalPhoneNumber?: string; // APIのinternationalPhoneNumberから変更
   weekdayDescriptions?: string[]; // これはそのまま使用
 
   // Admin fields
@@ -55,7 +55,7 @@ interface FirestoreRestaurantDetails {
   isActive: boolean;
   category: string;
 
-  // lastSyncAt, preview, subarea は含めない
+  // lastSyncAt, preview, subarea は保存しない
 }
 
 
@@ -63,18 +63,14 @@ interface FirestoreRestaurantDetails {
 export type RecommendationResult = FinalOutput[number] & {
     criteria: RestaurantCriteria;
     photoUrl?: string;
-    placeId: string; // これは cache key および LLM selection の placeId
+    placeId: string;
     websiteUri?: string;
     googleMapsUri?: string;
-    address?: string; // これは表示用であり、Firestore保存時の formattedAddress と対応
+    address?: string;
     rating?: number;
-    userRatingsTotal?: number; // Firestore保存時の userRatingCount と対応
-    // displayName (レストラン名) は suggestion.restaurantName に含まれる
+    userRatingsTotal?: number;
 };
 
-/**
- * フロントエンドから呼び出される、Firestoreキャッシュロジックを実装したサーバーアクション
- */
 export async function getRestaurantSuggestion(
   criteria: RestaurantCriteria
 ): Promise<{ data?: RecommendationResult[]; error?: string }> {
@@ -84,7 +80,7 @@ export async function getRestaurantSuggestion(
         date: format(new Date(criteria.date), 'yyyy-MM-dd')
     };
 
-    console.log("Step 1 & 2: Starting Places API search and AI primary filtering...");
+    console.log("Step 1: Starting Places API search (textSearchNew)...");
     const initialCandidates: RestaurantCandidate[] = await textSearchNew(criteriaForAI);
     if (!initialCandidates || initialCandidates.length === 0) {
       console.warn(`No restaurants found for location: ${criteriaForAI.location}, cuisine: ${criteriaForAI.cuisine}`);
@@ -92,6 +88,14 @@ export async function getRestaurantSuggestion(
     }
     console.log(`Found ${initialCandidates.length} initial candidates from Places API.`);
 
+    // --- レビューサマリー確認用ログ ---
+    console.log("--- Review Summaries for AI Primary Filtering (initialCandidates) ---");
+    // reviewSummary が undefined の可能性もあるため、安全にアクセス
+    console.log(JSON.stringify(initialCandidates.map(c => ({ id: c.id, name: c.name, reviewSummary: c.reviewSummary || "N/A" })), null, 2));
+    console.log("--------------------------------------------------------------------");
+    // --- ここまで確認用ログ ---
+
+    console.log("Step 2: Starting AI primary filtering (filterRestaurantsForGroup)...");
     const filteredPlaceIds = await filterRestaurantsForGroup({
       restaurants: initialCandidates,
       criteria: criteriaForAI,
@@ -109,27 +113,24 @@ export async function getRestaurantSuggestion(
       const docSnap = await docRef.get();
 
       if (docSnap.exists) {
-        const cachedData = docSnap.data() as FirestoreRestaurantDetails; // キャスト先を更新
+        const cachedData = docSnap.data() as FirestoreRestaurantDetails;
         console.log(`[CACHE HIT] Firestore: Fetched '${cachedData?.displayName}' (ID: ${id}) from shinjuku-places.`);
 
-        // Firestoreの構造からApiRestaurantDetailsの構造へ再マッピング (表示やAI分析のため)
-        // この部分は、キャッシュされたデータが次のAIフローで期待される形式に合うように調整する
-        // FirestoreRestaurantDetails から ApiRestaurantDetails への変換が必要
         const apiDetailsFromCache: ApiRestaurantDetails = {
             id: cachedData.id,
-            name: cachedData.displayName, // FirestoreのdisplayNameをAPIのnameフィールドに
+            name: cachedData.displayName,
             formattedAddress: cachedData.formattedAddress,
             rating: cachedData.rating,
             userRatingCount: cachedData.userRatingCount,
-            photos: cachedData.photos.map(p => ({ // FirestorePlacePhotoからApiPlacePhotoへ
+            photos: cachedData.photos.map(p => ({
                 name: p.name,
                 widthPx: p.widthPx,
                 heightPx: p.heightPx,
-                authorAttributions: [], // ApiPlacePhotoはこれを持つが、Firestoreには保存しないので空配列
+                authorAttributions: [], // API型にはあるがFirestoreには保存しない
             })),
-            reviews: cachedData.reviews.map(r => ({ // FirestorePlaceReviewからApiPlaceReviewへ
-                name: '', // ApiPlaceReviewはnameを持つが、Firestoreにはないので空文字
-                relativePublishTimeDescription: '', // 同上
+            reviews: cachedData.reviews.map(r => ({
+                name: '', // API型にはあるがFirestoreには保存しない
+                relativePublishTimeDescription: '', // API型にはあるがFirestoreには保存しない
                 rating: r.rating,
                 text: r.text ? { text: r.text, languageCode: r.languageCode || 'ja' } : undefined,
                 originalText: r.text ? { text: r.text, languageCode: r.languageCode || 'ja' } : undefined,
@@ -138,7 +139,7 @@ export async function getRestaurantSuggestion(
             })),
             websiteUri: cachedData.websiteUri,
             googleMapsUri: cachedData.googleMapsUri,
-            internationalPhoneNumber: cachedData.nationalPhoneNumber, // FirestoreのnationalPhoneNumberをAPIのinternationalPhoneNumberに
+            internationalPhoneNumber: cachedData.nationalPhoneNumber,
             regularOpeningHours: cachedData.weekdayDescriptions ? { weekdayDescriptions: cachedData.weekdayDescriptions } : undefined,
         };
         return apiDetailsFromCache;
@@ -148,37 +149,37 @@ export async function getRestaurantSuggestion(
         if (detailsFromApi) {
           const now = Timestamp.now();
 
-          // APIレスポンス(detailsFromApi)をFirestoreRestaurantDetails構造にマッピング
           const firestoreDocData: FirestoreRestaurantDetails = {
             id: detailsFromApi.id,
-            displayName: detailsFromApi.name, // APIのnameをdisplayNameに
+            displayName: detailsFromApi.name,
             formattedAddress: detailsFromApi.formattedAddress,
             rating: detailsFromApi.rating,
             userRatingCount: detailsFromApi.userRatingCount,
-            photos: (detailsFromApi.photos || []).map((p: ApiPlacePhoto) => ({ // ApiPlacePhotoからFirestorePlacePhotoへ
+            photos: (detailsFromApi.photos || []).map((p: ApiPlacePhoto) => ({
               name: p.name,
               widthPx: p.widthPx,
               heightPx: p.heightPx,
+              // authorAttributions は保存しない
             })),
-            reviews: (detailsFromApi.reviews || []).map((r: ApiPlaceReview) => ({ // ApiPlaceReviewからFirestorePlaceReviewへ
+            reviews: (detailsFromApi.reviews || []).map((r: ApiPlaceReview) => ({
               authorName: r.authorAttribution?.displayName,
               languageCode: r.text?.languageCode,
-              publishTime: r.publishTime, // Google Places API の Review には publishTime がある
+              publishTime: r.publishTime,
               rating: r.rating,
               text: r.text?.text,
             })),
             websiteUri: detailsFromApi.websiteUri,
             googleMapsUri: detailsFromApi.googleMapsUri,
-            nationalPhoneNumber: detailsFromApi.internationalPhoneNumber, // APIのinternationalPhoneNumberをnationalPhoneNumberに
+            nationalPhoneNumber: detailsFromApi.internationalPhoneNumber,
             weekdayDescriptions: detailsFromApi.regularOpeningHours?.weekdayDescriptions,
             createdAt: now,
             updatedAt: now,
             isActive: true,
-            category: "restaurant",
+            category: "restaurant", // カテゴリを固定値で設定
           };
           await docRef.set(firestoreDocData);
           console.log(`[CACHE SAVE] Firestore: Saved '${detailsFromApi.name}' (ID: ${id}) to shinjuku-places.`);
-          return detailsFromApi; // この関数はApiRestaurantDetailsを返すので、APIからのものをそのまま返す
+          return detailsFromApi;
         } else {
           console.warn(`[API FETCH FAIL] Failed to get details from API for ID: ${id}.`);
           return null;
@@ -194,8 +195,6 @@ export async function getRestaurantSuggestion(
     }
     console.log(`Successfully fetched/retrieved details for ${detailedCandidatesFromSource.length} candidates for AI analysis.`);
 
-    // AIフローへの入力はApiRestaurantDetailsのnameやreviews構造に依存している可能性があるため注意
-    // select-and-analyze.ts の CandidateForAISchema は APIレスポンスに近い構造を期待している
     const candidatesForAI = detailedCandidatesFromSource.map(candidate => {
         const reviewsText = (candidate.reviews && candidate.reviews.length > 0)
             ? candidate.reviews.map(r => r.text?.text).filter(Boolean).join('\n\n---\n\n')
@@ -203,7 +202,7 @@ export async function getRestaurantSuggestion(
 
         return {
             id: candidate.id,
-            name: candidate.name, // AIフローは 'name' を期待
+            name: candidate.name,
             reviewsText: reviewsText,
             address: candidate.formattedAddress,
             rating: candidate.rating,
@@ -214,7 +213,7 @@ export async function getRestaurantSuggestion(
     });
 
 
-    console.log("Step 4: Running final AI analysis on detailed candidates...");
+    console.log("Step 4: Running final AI analysis (selectAndAnalyzeBestRestaurants)...");
     const top3Analyses = await selectAndAnalyzeBestRestaurants({
       candidates: candidatesForAI,
       criteria: criteriaForAI,
@@ -244,22 +243,20 @@ export async function getRestaurantSuggestion(
         }
 
         let photoUrl: string | undefined = undefined;
-        // APIレスポンスのphotos配列を使う
         if (correspondingCandidate.photos && correspondingCandidate.photos.length > 0 && correspondingCandidate.photos[0].name) {
             photoUrl = await buildPhotoUrl(correspondingCandidate.photos[0].name);
         }
 
         finalResults.push({
-            ...result, // suggestion (LLMからの推薦) と analysis (レビュー分析結果)
-            placeId: correspondingCandidate.id, // placeId
-            criteria, // 検索条件
-            photoUrl, // 写真URL
+            ...result,
+            placeId: correspondingCandidate.id,
+            criteria,
+            photoUrl,
             websiteUri: correspondingCandidate.websiteUri,
             googleMapsUri: correspondingCandidate.googleMapsUri,
             address: correspondingCandidate.formattedAddress,
             rating: correspondingCandidate.rating,
             userRatingsTotal: correspondingCandidate.userRatingCount,
-            // レストラン名は result.suggestion.restaurantName に既にある
         });
     }
 
@@ -279,4 +276,3 @@ export async function getRestaurantSuggestion(
     return { error: `処理中にエラーが発生しました: ${errorMessage}` };
   }
 }
-
