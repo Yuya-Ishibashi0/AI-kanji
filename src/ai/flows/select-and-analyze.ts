@@ -5,18 +5,16 @@ import { z } from 'genkit';
 import { 
   RestaurantCriteriaSchema as RestaurantCriteriaStringDateSchema, 
   AnalyzeRestaurantReviewsOutputSchema, 
-  SuggestRestaurantsOutputSchema, // SuggestRestaurantsOutputSchema は restaurantName と recommendationRationale のみ
+  SuggestRestaurantsOutputSchema,
   type AnalyzeRestaurantReviewsOutput,
 } from '@/lib/schemas';
 import { analyzeRestaurantReviews, type AnalyzeRestaurantReviewsInput } from './analyze-restaurant-reviews';
 
-// LLMに出力してほしい、推薦理由とレストラン名に加えて、placeIdも含むスキーマ
 const SingleLLMSuggestionSchema = SuggestRestaurantsOutputSchema.extend({
   placeId: z.string().describe("選択されたレストランのPlace ID。入力候補の `id` と一致させてください。"),
 });
 
 const SingleRecommendationSchema = z.object({
-  // suggestion は LLM が生成する推薦理由とレストラン名、そして placeId を含む
   suggestion: SingleLLMSuggestionSchema, 
   analysis: AnalyzeRestaurantReviewsOutputSchema,
 });
@@ -24,22 +22,23 @@ const SingleRecommendationSchema = z.object({
 const FinalOutputSchema = z.array(SingleRecommendationSchema);
 export type FinalOutput = z.infer<typeof FinalOutputSchema>;
 
-// AIフローへの入力候補のスキーマ
 const CandidateForAISchema = z.object({
   id: z.string().describe("レストランの一意のPlace ID"),
   name: z.string().describe("レストラン名"),
   reviewsText: z.string().optional().describe("レストランのレビュー概要や結合されたレビュー本文"),
   address: z.string().optional().describe("住所"),
   rating: z.number().optional().describe("評価点"),
-  userRatingsTotal: z.number().optional().describe("評価数"), // Firestoreでは userRatingCount
+  userRatingsTotal: z.number().optional().describe("評価数"),
   websiteUri: z.string().optional().describe("レストランのウェブサイトURI"),
   googleMapsUri: z.string().optional().describe("レストランのGoogle Maps URI"),
+  types: z.array(z.string()).optional().describe("レストランのカテゴリタイプ（例: restaurant, cafe）"),
+  priceLevel: z.string().optional().describe("レストランの価格帯"),
 });
 type CandidateForAI = z.infer<typeof CandidateForAISchema>;
 
 
 const SelectAndAnalyzeInputSchema = z.object({
-  candidates: z.array(CandidateForAISchema).describe("整形されたレストラン候補情報の配列（レビューテキスト要約を含む）"),
+  candidates: z.array(CandidateForAISchema).describe("整形されたレストラン候補情報の配列（レビューテキスト要約、タイプ、価格レベルを含む）"),
   criteria: RestaurantCriteriaStringDateSchema.describe("ユーザーが入力した希望条件、個室希望、カスタムプロンプトも含む"),
 });
 
@@ -64,9 +63,20 @@ export const selectAndAnalyzeBestRestaurants = ai.defineFlow(
     const persona = input.criteria.customPromptPersona || defaultPersona;
     const evaluationPriorities = input.criteria.customPromptPriorities || defaultEvaluationPriorities;
     
+    // プロンプトに渡す候補情報を調整（タイプや価格帯も入れることを検討）
+    const candidatesForPrompt = input.candidates.map(c => ({ 
+        id: c.id, 
+        name: c.name, 
+        rating: c.rating, 
+        userRatingsTotal: c.userRatingsTotal,
+        types: c.types,
+        priceLevel: c.priceLevel,
+        reviewsTextSnippet: c.reviewsText ? c.reviewsText.substring(0, 200) + '...' : 'レビューなし' 
+    }));
+
     const selectionPrompt = `
 ${persona}
-以下のユーザー希望条件とレストラン候補リストを注意深く分析してください。
+以下のユーザー希望条件とレストラン候補リストを注意深く分析してください。候補リストには、評価点、レビュー数、店舗タイプ、価格帯、レビューの冒頭部分が含まれています。
 
 # ユーザー希望条件
 料理: ${input.criteria.cuisine}
@@ -75,8 +85,8 @@ ${persona}
 日時: ${input.criteria.date} ${input.criteria.time}
 個室希望: ${input.criteria.privateRoomRequested ? 'はい' : 'いいえ'}
 
-# レストラン候補リスト (各候補のレビュー(reviewsText プロパティ内のテキスト snippet)も参考にしてください)
-${JSON.stringify(input.candidates.map(c => ({ id: c.id, name: c.name, rating: c.rating, reviewsTextSnippet: c.reviewsText ? c.reviewsText.substring(0, 200) + '...' : 'レビューなし' })), null, 2)}
+# レストラン候補リスト (各候補の評価点、レビュー数、店舗タイプ、価格帯、レビュー(reviewsTextSnippet)も参考にしてください)
+${JSON.stringify(candidatesForPrompt, null, 2)}
 
 # あなたのタスク
 1.  **レストランの選定**: 候補リストの中から、送別会・歓迎会に最もふさわしいレストランを、下記の【評価の優先順位】に従って【上位3件まで】選んでください。
@@ -96,12 +106,12 @@ ${evaluationPriorities}
       model: 'googleai/gemini-1.5-flash', 
       output: {
         format: 'json',
-        schema: LLMSelectionOutputSchema, // LLM の出力は placeId, restaurantName, recommendationRationale の配列
+        schema: LLMSelectionOutputSchema,
       },
       config: { temperature: 0.2 }, 
     });
 
-    const llmSelections = llmResponse.output; // これは SingleLLMSuggestionSchema の配列
+    const llmSelections = llmResponse.output;
 
     if (!llmSelections || llmSelections.length === 0) {
       console.log("AI (skilled secretary) did not select any restaurants.");
@@ -110,8 +120,7 @@ ${evaluationPriorities}
 
     const finalRecommendations: FinalOutput = [];
 
-    for (const selection of llmSelections) { // selection は SingleLLMSuggestionSchema の型
-      // LLMが選んだ候補の元の詳細情報を特定するために、input.candidates を使用
+    for (const selection of llmSelections) {
       const originalCandidate = input.candidates.find(c => c.id === selection.placeId);
 
       if (!originalCandidate) {
@@ -120,8 +129,8 @@ ${evaluationPriorities}
       }
 
       const analysisInput: AnalyzeRestaurantReviewsInput = {
-        restaurantName: selection.restaurantName, // LLMが返したレストラン名
-        reviews: originalCandidate.reviewsText || "このレストランに関するレビュー情報はありません。", // 紐づけた候補のレビューテキスト
+        restaurantName: selection.restaurantName,
+        reviews: originalCandidate.reviewsText || "このレストランに関するレビュー情報はありません。",
       };
       
       let analysisResult: AnalyzeRestaurantReviewsOutput;
@@ -130,7 +139,6 @@ ${evaluationPriorities}
         analysisResult = await analyzeRestaurantReviews(analysisInput);
       } catch (e) {
         console.error(`Error calling analyzeRestaurantReviews for ${selection.restaurantName}:`, e);
-        // フォールバックの分析結果
         analysisResult = {
             overallSentiment: "レビュー分析中にエラーが発生しました",
             keyAspects: { food: "情報なし", service: "情報なし", ambiance: "情報なし" },
@@ -140,7 +148,7 @@ ${evaluationPriorities}
       }
       
       finalRecommendations.push({
-        suggestion: selection, // LLMからの suggestion (placeId, restaurantName, rationale を含む)
+        suggestion: selection,
         analysis: analysisResult,
       });
     }
