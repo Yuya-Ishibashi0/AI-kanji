@@ -1278,3 +1278,4 @@ Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allow
 [firebase-admin.ts] Firebase admin app already initialized. Reusing existing instance.
 [firebase-admin.ts] Module finished loading.
  GET / [32m200[39m in 2754ms
+ GET / [32m200[39m in 484ms
