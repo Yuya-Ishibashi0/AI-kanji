@@ -503,3 +503,438 @@ MI...
 [firebase-admin.ts] adminDb is MOCKED due to initialization failure.
 [firebase-admin.ts] Module finished loading.
  GET / [32m200[39m in 1889ms
+ [37m[1m [22m[39m Reload env: .env.local
+ [37m[1m [22m[39m Reload env: .env.local
+[firebase-admin.ts] Module starting to load. Timestamp: 2025-06-19T14:00:41.979Z
+[firebase-admin.ts] NODE_ENV: development
+[firebase-admin.ts] --- Logging Direct Environment Variables (from .env.local or App Hosting direct value) ---
+[firebase-admin.ts] TEST_VAR_DIRECT: UNDEFINED
+[firebase-admin.ts] ANOTHER_TEST_VAR: UNDEFINED
+[firebase-admin.ts] --- Finished Logging Direct Environment Variables ---
+[firebase-admin.ts] --- Logging Secret Environment Variables (from .env.local or Secret Manager) ---
+[firebase-admin.ts] FIREBASE_PROJECT_ID: EXISTS (length: 17)
+[firebase-admin.ts] FIREBASE_CLIENT_EMAIL: EXISTS (length: 65)
+[firebase-admin.ts] FIREBASE_PRIVATE_KEY: EXISTS (length: 1704)
+[firebase-admin.ts] FIREBASE_PRIVATE_KEY (preview, first 30 after any processing): -----BEGIN PRIVATE KEY-----
+MI...
+[firebase-admin.ts] FIREBASE_PRIVATE_KEY (preview, last 30 after any processing): ...V8=
+-----END PRIVATE KEY-----
+
+[firebase-admin.ts] FIREBASE_PRIVATE_KEY contains literal \\n (before replace): false
+[firebase-admin.ts] FIREBASE_PRIVATE_KEY (after replace) contains actual newline: true
+[firebase-admin.ts] GOOGLE_PLACES_API_KEY: EXISTS (length: 39)
+[firebase-admin.ts] GEMINI_API_KEY: EXISTS (length: 39)
+[firebase-admin.ts] NEXT_PUBLIC_FIREBASE_API_KEY: EXISTS (length: 39)
+[firebase-admin.ts] NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: EXISTS (length: 33)
+[firebase-admin.ts] NEXT_PUBLIC_FIREBASE_PROJECT_ID: EXISTS (length: 17)
+[firebase-admin.ts] NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: EXISTS (length: 37)
+[firebase-admin.ts] NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: EXISTS (length: 11)
+[firebase-admin.ts] NEXT_PUBLIC_FIREBASE_APP_ID: EXISTS (length: 40)
+[firebase-admin.ts] --- Finished Logging Secret Environment Variables ---
+[firebase-admin.ts] No Firebase admin apps initialized. Attempting to initialize...
+[firebase-admin.ts] All required Admin SDK env vars seem present. Preparing service account object...
+[firebase-admin.ts] Service account object constructed. Calling admin.initializeApp()...
+🔥 [firebase-admin.ts FATAL ERROR] Firebase Admin SDK initialization FAILED. Firestore functionality will be MOCKED.
+[firebase-admin.ts ERROR DETAILS] Error Type: TypeError
+[firebase-admin.ts ERROR DETAILS] Message: Cannot read properties of undefined (reading 'INTERNAL')
+[firebase-admin.ts ERROR DETAILS] Full error object: TypeError: Cannot read properties of undefined (reading 'INTERNAL')
+    at [project]/src/lib/firebase-admin.ts [app-rsc] (ecmascript) (src/lib/firebase-admin.ts:97:26)
+    at <unknown> (src/app/actions.ts:17:0)
+    at [project]/src/app/actions.ts [app-rsc] (ecmascript) (.next/server/chunks/ssr/[root-of-the-server]__c56fc87b._.js:907:1)
+    at <unknown> (.next/server/chunks/ssr/[root-of-the-server]__c56fc87b._.js:1128:147)
+    at [project]/.next-internal/server/app/page/actions.js { ACTIONS_MODULE0 => "[project]/src/app/actions.ts [app-rsc] (ecmascript)" } [app-rsc] (server actions loader, ecmascript) <module evaluation> (.next/server/chunks/ssr/[root-of-the-server]__c56fc87b._.js:1126:1)
+    at <unknown> (.next/server/chunks/ssr/[root-of-the-server]__c56fc87b._.js:1162:364)
+    at [project]/.next-internal/server/app/page/actions.js { ACTIONS_MODULE0 => "[project]/src/app/actions.ts [app-rsc] (ecmascript)" } [app-rsc] (server actions loader, ecmascript) (.next/server/chunks/ssr/[root-of-the-server]__c56fc87b._.js:1158:1)
+    at Object.<anonymous> (.next/server/app/page.js:30:9)
+[0m [90m  95 |[39m       }[33m;[39m[0m
+[0m [90m  96 |[39m       console[33m.[39mlog([32m'[firebase-admin.ts] Service account object constructed. Calling admin.initializeApp()...'[39m)[33m;[39m[0m
+[0m[31m[1m>[22m[39m[90m  97 |[39m       admin[33m.[39minitializeApp({[0m
+[0m [90m     |[39m                          [31m[1m^[22m[39m[0m
+[0m [90m  98 |[39m         credential[33m:[39m admin[33m.[39mcredential[33m.[39mcert(serviceAccount)[33m,[39m[0m
+[0m [90m  99 |[39m       })[33m;[39m[0m
+[0m [90m 100 |[39m       console[33m.[39mlog([32m'✅ [firebase-admin.ts] Firebase Admin SDK initialized successfully!'[39m)[33m;[39m[0m
+[firebase-admin.ts] adminDb is MOCKED due to initialization failure.
+[firebase-admin.ts] Module finished loading.
+ GET /?monospaceUid=722168 [32m200[39m in 2911ms
+Step 1 & 2: Starting Places API search and AI primary filtering...
+Found 10 initial candidates from Places API.
+AI primary filtering narrowed down to 2 candidates: ChIJFTK8FNqMGGARuPBL2ZwejjQ, ChIJ-3_eBNuMGGARNLAqqInDqNo
+Step 3: Fetching details for filtered candidates (cache-first strategy)...
+[firebase-admin.ts MOCK DB ACTIVE - INIT FAILURE] adminDb.collection('shinjuku-places') called.
+[firebase-admin.ts MOCK DB ACTIVE - INIT FAILURE] ...doc('ChIJFTK8FNqMGGARuPBL2ZwejjQ').get() called.
+[firebase-admin.ts MOCK DB ACTIVE - INIT FAILURE] adminDb.collection('shinjuku-places') called.
+[firebase-admin.ts MOCK DB ACTIVE - INIT FAILURE] ...doc('ChIJ-3_eBNuMGGARNLAqqInDqNo').get() called.
+[CACHE MISS] Firestore: No data for ID: ChIJFTK8FNqMGGARuPBL2ZwejjQ in shinjuku-places. Fetching from API...
+[CACHE MISS] Firestore: No data for ID: ChIJ-3_eBNuMGGARNLAqqInDqNo in shinjuku-places. Fetching from API...
+[firebase-admin.ts MOCK DB ACTIVE - INIT FAILURE] ...doc('ChIJFTK8FNqMGGARuPBL2ZwejjQ').set() called with data: {
+  id: [32m'ChIJFTK8FNqMGGARuPBL2ZwejjQ'[39m,
+  name: [32m'個室 創作和食 ワイン 縁 新宿店'[39m,
+  formattedAddress: [32m'日本、〒160-0022 東京都新宿区新宿３丁目２６−１８ カワノビル 5F'[39m,
+  rating: [33m3.6[39m,
+  userRatingCount: [33m375[39m,
+  photos: [
+    {
+      name: [32m'places/ChIJFTK8FNqMGGARuPBL2ZwejjQ/photos/AXQCQNQgO-B3Fseapx3zeFDEP6Ahox3Jcl2ebX51raz6szj9nYwbq43QsN7GXNmT6prlWBVmtYe0cvmNhnGpojAkR58ajAuA_W2tkG66q3eKKtGwf_QSnsf6ZDET02unSVhyXRNijnvlrL4xXpccyIGjapgrGwTJi5DRXKAuEcU9zJZ7k-hvTUaIl-wIMABwJPKv8nvnGjiv-4sM6eLS11Tsncd8SIK1OUjqYNqp5s2j0DOROfePbnmvEDybkbSiQw8vjssFMRiBg89DiUpODFX8MfTU2XIKwPkaShO92X3ERLbTYg'[39m,
+      widthPx: [33m800[39m,
+      heightPx: [33m800[39m,
+      authorAttributions: [36m[Array][39m,
+      flagContentUri: [32m'https://www.google.com/local/imagery/report/?cb_client=maps_api_places.places_api&image_key=!1e10!2sAF1QipPNTfOaaY8XVmzMCi6AG_GPoi78iMC2eiQFT6nV&hl=ja'[39m,
+      googleMapsUri: [32m'https://www.google.com/maps/place//data=!3m4!1e2!3m2!1sAF1QipPNTfOaaY8XVmzMCi6AG_GPoi78iMC2eiQFT6nV!2e10!4m2!3m1!1s0x60188cda14bc3215:0x348e1e9cd94bf0b8'[39m
+    },
+    {
+      name: [32m'places/ChIJFTK8FNqMGGARuPBL2ZwejjQ/photos/AXQCQNSBFTj8ViQtHuRuco3nGGQbTcOCjnjJZiwKyvWxreIkIt4f3MrTw6ctrpxUPxo3VXGkVv1FeHTr_pVjwV48EVKarZ4Rc08Zi37sjFTdoM9C1MgHZD3mpIGdwnGmbWEyMD_GVYOSS3G6xz1oCh7W8Tth-xe-BSHI5OYbeph3GmNOHQOvvpIKylQZhSjoJW25A3XAupO5HA4C3N0DWuPF5-HVcxv_V2Uhv4t8jyGoVs4BHkNILTQ49qbTkrAINdrblePPP8Ji7Tmb5RZmTaAepq2__91r-E9EwtjVR6j4c5Yfng'[39m,
+      widthPx: [33m1479[39m,
+      heightPx: [33m1109[39m,
+      authorAttributions: [36m[Array][39m,
+      flagContentUri: [32m'https://www.google.com/local/imagery/report/?cb_client=maps_api_places.places_api&image_key=!1e10!2sAF1QipNBIW0GRCA2EgPas1EqyLC8dZsDkW8AV77avH9Q&hl=ja'[39m,
+      googleMapsUri: [32m'https://www.google.com/maps/place//data=!3m4!1e2!3m2!1sAF1QipNBIW0GRCA2EgPas1EqyLC8dZsDkW8AV77avH9Q!2e10!4m2!3m1!1s0x60188cda14bc3215:0x348e1e9cd94bf0b8'[39m
+    },
+    {
+      name: [32m'places/ChIJFTK8FNqMGGARuPBL2ZwejjQ/photos/AXQCQNQkt9kYZ1lnSp-DnYsKi6GiIpcY52DRJmtTPJ80GAtz5HjPFokbQKlaXf3ZZfMW1ljVcmvz3waPDC2Zrmo7m1eSwJO5J3OxwKQj4tRJoTUXShly5PFFxziHWgyBecybnGbUv3w4PDUoTlxgrsbgDPDzI1WoqXpYTUtApqGVrMg_0RLGtoBHyigIlXklhbtwu3KNB2X1vvjhmHg-SuBxAZS3hpT7odPWrUiCcJw1iaFSCYBXu_z6xZ7AHfUXm4l2-c2Iqc3SScNpAT0KKO9VEF_S100l_3JzcTWWDHdV8nhlww'[39m,
+      widthPx: [33m800[39m,
+      heightPx: [33m800[39m,
+      authorAttributions: [36m[Array][39m,
+      flagContentUri: [32m'https://www.google.com/local/imagery/report/?cb_client=maps_api_places.places_api&image_key=!1e10!2sAF1QipOhtXIeS7uTeYlr4xh57yP6_KBobdeue3fdaOoq&hl=ja'[39m,
+      googleMapsUri: [32m'https://www.google.com/maps/place//data=!3m4!1e2!3m2!1sAF1QipOhtXIeS7uTeYlr4xh57yP6_KBobdeue3fdaOoq!2e10!4m2!3m1!1s0x60188cda14bc3215:0x348e1e9cd94bf0b8'[39m
+    },
+    {
+      name: [32m'places/ChIJFTK8FNqMGGARuPBL2ZwejjQ/photos/AXQCQNQwoAQAt9K0Bg0oqf3haYubqzsotZQeWNwQ-kYx5kzXlrvlUdGom_--yE7sZXFzd6-2lFOhJ5bCGc1MdG3X1TiBS0WgOLTxAzyVlLZhgjX2PHKLUhZ7nFUKefHhseLsNKFOjcrWpw1mHFZerj9Hpo6kORj9vANV8M-_64DlmbpUxmJ6-zlw9JFHD2qbw9hTTAfJcVIJGPfrAIo7u1Z_S8rxZlxB1D3mOF9mMd53jomY6MDrMmOnz7SPStBvJvsnBSqAIE_xxQf-D37kQWhIShzWFFx3jw59sJ3iK7zSR-1Cug'[39m,
+      widthPx: [33m1109[39m,
+      heightPx: [33m1479[39m,
+      authorAttributions: [36m[Array][39m,
+      flagContentUri: [32m'https://www.google.com/local/imagery/report/?cb_client=maps_api_places.places_api&image_key=!1e10!2sAF1QipPn6X3kAcbNbbTe0EANpEXkWkFAJYl_SGq8YRNi&hl=ja'[39m,
+      googleMapsUri: [32m'https://www.google.com/maps/place//data=!3m4!1e2!3m2!1sAF1QipPn6X3kAcbNbbTe0EANpEXkWkFAJYl_SGq8YRNi!2e10!4m2!3m1!1s0x60188cda14bc3215:0x348e1e9cd94bf0b8'[39m
+    },
+    {
+      name: [32m'places/ChIJFTK8FNqMGGARuPBL2ZwejjQ/photos/AXQCQNQocusabZZGDFtgfbKq7gyp8aYJtmWYbEbZfG5xWGyNAHM8M3FxFUNX49Nl39bmGAnS4_4CTRcojQWlhROZFbhxS47bfMZv7Bv34Za0jHcAMua6J1RBFvRAKRlOSRldfsuCKdLaDdholI25oXDzlTwBksBZ9LpUcfPZ9vlkzlGxCNSXmDHCpbtCN0TxRLmEupg5N-aE66IWoSvDu5ZpOvfr0toZdicHt_189l8jRXBQxeprjyfILsuOMh6Rb2PLBs0THXb73E7WGPMJHiFbHhKI8sY7Nd5JEwp8YM9j3ohHrg'[39m,
+      widthPx: [33m1479[39m,
+      heightPx: [33m1109[39m,
+      authorAttributions: [36m[Array][39m,
+      flagContentUri: [32m'https://www.google.com/local/imagery/report/?cb_client=maps_api_places.places_api&image_key=!1e10!2sAF1QipM_EOH38fRDeLyxkhksZMpwzSyRjBusq0hdE6oY&hl=ja'[39m,
+      googleMapsUri: [32m'https://www.google.com/maps/place//data=!3m4!1e2!3m2!1sAF1QipM_EOH38fRDeLyxkhksZMpwzSyRjBusq0hdE6oY!2e10!4m2!3m1!1s0x60188cda14bc3215:0x348e1e9cd94bf0b8'[39m
+    },
+    {
+      name: [32m'places/ChIJFTK8FNqMGGARuPBL2ZwejjQ/photos/AXQCQNS_QcO6pKIQkjUMe8x8Rc2Maotluk88_LCOz0ioLZ9_a2c4rtJrtaG9_lTaZuDquyoYj66rq7AwbWjmBhzvutfse5XPvRLn1FKf9c3mK3_JRbET-65cIlijVrpwE7L32uUEWlfR4eTgrSG3H_3mUvFRFo_Kg1h0L2YLToe7Dk1Fmbk8nrpJMsThF_Ae3ktzPyaoOxTUBd4_m5V_8OLGN_7nZ3r72KNQNtaMyn6Tkr7Hl5Si3AzY_NHfsk6cJgjVv4kVwQfXdtBbDkrX5OPCvjauE1T3_Fwjv0itpO5d2X7KCQ'[39m,
+      widthPx: [33m3600[39m,
+      heightPx: [33m2400[39m,
+      authorAttributions: [36m[Array][39m,
+      flagContentUri: [32m'https://www.google.com/local/imagery/report/?cb_client=maps_api_places.places_api&image_key=!1e10!2sAF1QipNMSqRN1a9UCtWwq2TIM6wu5p9gejcowxZPXs0p&hl=ja'[39m,
+      googleMapsUri: [32m'https://www.google.com/maps/place//data=!3m4!1e2!3m2!1sAF1QipNMSqRN1a9UCtWwq2TIM6wu5p9gejcowxZPXs0p!2e10!4m2!3m1!1s0x60188cda14bc3215:0x348e1e9cd94bf0b8'[39m
+    },
+    {
+      name: [32m'places/ChIJFTK8FNqMGGARuPBL2ZwejjQ/photos/AXQCQNRZzMXibVWK7dIYIx2Ix0CBKk50Ec0Agd0w3mS-I221w0IE32Nevq2qJ9ue9ddbLvOrtMQrAzEB1eg3zdSfMOxr-MXoj0FS0U3cZUILl4zb3U1ufgtfTgz3cXYqjAmx5SIMBT9OgdlnGQ5ziR7WQOszJjaA0wBBTDldHL3eiqPk7PpDjt_-gjpd2X0LnJVoQBjdZjmMrCc0fRHYTlV_LDlOxrOoAk--0tT9Ba1kyhHZ_irT59RYrtdNo6zDIRZ5-D0k303EUb6CZaeijT5J1lhHmRRdnKtJSofkGq1HvYuvEQ'[39m,
+      widthPx: [33m800[39m,
+      heightPx: [33m800[39m,
+      authorAttributions: [36m[Array][39m,
+      flagContentUri: [32m'https://www.google.com/local/imagery/report/?cb_client=maps_api_places.places_api&image_key=!1e10!2sAF1QipOgRAD6Glt-04dqLlPp1X0XOmIn1H7lxGOfuZ-g&hl=ja'[39m,
+      googleMapsUri: [32m'https://www.google.com/maps/place//data=!3m4!1e2!3m2!1sAF1QipOgRAD6Glt-04dqLlPp1X0XOmIn1H7lxGOfuZ-g!2e10!4m2!3m1!1s0x60188cda14bc3215:0x348e1e9cd94bf0b8'[39m
+    },
+    {
+      name: [32m'places/ChIJFTK8FNqMGGARuPBL2ZwejjQ/photos/AXQCQNQy5yf_KBANTXwJNuCO9ncEpvSGbrFGqd-kSW5dG_Pb2PwkybO4jZ3QdAoFufEczMNgZ_9DvS6OoZa1a-4cn2DHCgxUnLL8x0AM5rKXc47pKAg_CNwszY-ybw_lbxR9a3LlmK4egIkv3EI83u4XU0d0SfGnjiUxQdFKXd3vo6dwRg5EcNM9IuulXMBFd_n1UKcqqdOWBCwzEVGLYtEWuLgRam3BA0Gm_t9qWNkW9riYqKsQrUsIQFPd_OAxjk5l_NwUNVwH140L6PEGZboHicR6dT8hJBqGtanTHv-C8Za_MMIwYhbHZheLn5EPFfkoOYxsLO3bfoHtlfAV3UWrUtVNgQ_zzyS3-6yxGRhxjIX55i82Ti_wCFo4Iziv4FbhJIhD_yU6ijhr4NVdiQoYS-nJiTwGAhj2QCSVKBO_3V1dJ9x9'[39m,
+      widthPx: [33m4800[39m,
+      heightPx: [33m3600[39m,
+      authorAttributions: [36m[Array][39m,
+      flagContentUri: [32m'https://www.google.com/local/imagery/report/?cb_client=maps_api_places.places_api&image_key=!1e10!2sCIHM0ogKEICAgMDo0-mOogE&hl=ja'[39m,
+      googleMapsUri: [32m'https://www.google.com/maps/place//data=!3m4!1e2!3m2!1sCIHM0ogKEICAgMDo0-mOogE!2e10!4m2!3m1!1s0x60188cda14bc3215:0x348e1e9cd94bf0b8'[39m
+    },
+    {
+      name: [32m'places/ChIJFTK8FNqMGGARuPBL2ZwejjQ/photos/AXQCQNTAbV1Rw3hGt-Q4Dc_8oDPAoCp5VahQjU5I9z5FVZjjuR8SBWgFONOxXpsScKk2ffU8AhOlBqd0kRpYHkh5kxyn5Sm3Zfdu3SMOOpv9d6MivcMZ0HlhVLvdQpus4Vn2eEyPYSplHpIq0_b_pgccq9LHjIYxYwROIm8cNkvmy3INBJR_rD9m4kpZ7BX8QrrO9UxeUePmbrTozKbFudQaaR5QDFaTlwDaMI7MAoiCkzGwSODyzsQH9aDGnfnjgV_H5pnSXoOs_WACgSp969FqjvKF_9_uUsJbNfAolr40-38Qaw'[39m,
+      widthPx: [33m800[39m,
+      heightPx: [33m800[39m,
+      authorAttributions: [36m[Array][39m,
+      flagContentUri: [32m'https://www.google.com/local/imagery/report/?cb_client=maps_api_places.places_api&image_key=!1e10!2sAF1QipPEOZFT1rpdeCyICQgwfmqYzDKEkWIXk7c67Vil&hl=ja'[39m,
+      googleMapsUri: [32m'https://www.google.com/maps/place//data=!3m4!1e2!3m2!1sAF1QipPEOZFT1rpdeCyICQgwfmqYzDKEkWIXk7c67Vil!2e10!4m2!3m1!1s0x60188cda14bc3215:0x348e1e9cd94bf0b8'[39m
+    },
+    {
+      name: [32m'places/ChIJFTK8FNqMGGARuPBL2ZwejjQ/photos/AXQCQNQrWxDAeVGjwA9v3aJ6nza4sW5P2hJlzIFVtFd2kZXrHeLrdKiUIJaxniBD7PqV-nn8-jIDYXDFbwnjHNA_cLtvzaxuGEiUClLAVYexbMgQaz5KM1CFN406rRwA657xiDZd1KP5nunMmI5uSaQbAAmhyUxyRcuT39I490bAIq1JYytglmHXjOkucyuT7vgLZktLpYL9yPpTEwfsxHCI6bz8xxDzWqtB8oV-IPAYwOWKk8GOMnorIt1BUmsDbat2uvzN4_BE99ofCV3PRCoxGH01OsZnzBga2eZ_JIbZPzm_9A'[39m,
+      widthPx: [33m3600[39m,
+      heightPx: [33m2400[39m,
+      authorAttributions: [36m[Array][39m,
+      flagContentUri: [32m'https://www.google.com/local/imagery/report/?cb_client=maps_api_places.places_api&image_key=!1e10!2sAF1QipO1fwNUCuFexMQW4vrwSvqCtjDsvUo7MB7QJxxI&hl=ja'[39m,
+      googleMapsUri: [32m'https://www.google.com/maps/place//data=!3m4!1e2!3m2!1sAF1QipO1fwNUCuFexMQW4vrwSvqCtjDsvUo7MB7QJxxI!2e10!4m2!3m1!1s0x60188cda14bc3215:0x348e1e9cd94bf0b8'[39m
+    }
+  ],
+  reviews: [
+    {
+      name: [32m'places/ChIJFTK8FNqMGGARuPBL2ZwejjQ/reviews/ChdDSUhNMG9nS0VMSGo3YzNRMHJDZzdBRRAB'[39m,
+      relativePublishTimeDescription: [32m'1 か月前'[39m,
+      rating: [33m5[39m,
+      text: [36m[Object][39m,
+      originalText: [36m[Object][39m,
+      authorAttribution: [36m[Object][39m,
+      publishTime: [32m'2025-05-09T01:51:31.190092Z'[39m,
+      flagContentUri: [32m'https://www.google.com/local/review/rap/report?postId=ChdDSUhNMG9nS0VMSGo3YzNRMHJDZzdBRRAB&d=17924085&t=1'[39m,
+      googleMapsUri: [32m'https://www.google.com/maps/reviews/data=!4m6!14m5!1m4!2m3!1sChdDSUhNMG9nS0VMSGo3YzNRMHJDZzdBRRAB!2m1!1s0x60188cda14bc3215:0x348e1e9cd94bf0b8'[39m
+    },
+    {
+      name: [32m'places/ChIJFTK8FNqMGGARuPBL2ZwejjQ/reviews/ChZDSUhNMG9nS0VJQ0FnTURvMC1tT1FnEAE'[39m,
+      relativePublishTimeDescription: [32m'1 か月前'[39m,
+      rating: [33m5[39m,
+      text: [36m[Object][39m,
+      originalText: [36m[Object][39m,
+      authorAttribution: [36m[Object][39m,
+      publishTime: [32m'2025-04-28T14:59:07.972567Z'[39m,
+      flagContentUri: [32m'https://www.google.com/local/review/rap/report?postId=ChZDSUhNMG9nS0VJQ0FnTURvMC1tT1FnEAE&d=17924085&t=1'[39m,
+      googleMapsUri: [32m'https://www.google.com/maps/reviews/data=!4m6!14m5!1m4!2m3!1sChZDSUhNMG9nS0VJQ0FnTURvMC1tT1FnEAE!2m1!1s0x60188cda14bc3215:0x348e1e9cd94bf0b8'[39m
+    },
+    {
+      name: [32m'places/ChIJFTK8FNqMGGARuPBL2ZwejjQ/reviews/ChZDSUhNMG9nS0VJQ0FnSUQzekpfVUNREAE'[39m,
+      relativePublishTimeDescription: [32m'7 か月前'[39m,
+      rating: [33m3[39m,
+      text: [36m[Object][39m,
+      originalText: [36m[Object][39m,
+      authorAttribution: [36m[Object][39m,
+      publishTime: [32m'2024-11-12T22:40:33.042152Z'[39m,
+      flagContentUri: [32m'https://www.google.com/local/review/rap/report?postId=ChZDSUhNMG9nS0VJQ0FnSUQzekpfVUNREAE&d=17924085&t=1'[39m,
+      googleMapsUri: [32m'https://www.google.com/maps/reviews/data=!4m6!14m5!1m4!2m3!1sChZDSUhNMG9nS0VJQ0FnSUQzekpfVUNREAE!2m1!1s0x60188cda14bc3215:0x348e1e9cd94bf0b8'[39m
+    },
+    {
+      name: [32m'places/ChIJFTK8FNqMGGARuPBL2ZwejjQ/reviews/ChZDSUhNMG9nS0VJQ0FnSUR2M2J5U01nEAE'[39m,
+      relativePublishTimeDescription: [32m'5 か月前'[39m,
+      rating: [33m5[39m,
+      text: [36m[Object][39m,
+      originalText: [36m[Object][39m,
+      authorAttribution: [36m[Object][39m,
+      publishTime: [32m'2024-12-23T05:55:42.578017Z'[39m,
+      flagContentUri: [32m'https://www.google.com/local/review/rap/report?postId=ChZDSUhNMG9nS0VJQ0FnSUR2M2J5U01nEAE&d=17924085&t=1'[39m,
+      googleMapsUri: [32m'https://www.google.com/maps/reviews/data=!4m6!14m5!1m4!2m3!1sChZDSUhNMG9nS0VJQ0FnSUR2M2J5U01nEAE!2m1!1s0x60188cda14bc3215:0x348e1e9cd94bf0b8'[39m
+    },
+    {
+      name: [32m'places/ChIJFTK8FNqMGGARuPBL2ZwejjQ/reviews/ChZDSUhNMG9nS0VJQ0FnSUR2cllHVlhnEAE'[39m,
+      relativePublishTimeDescription: [32m'5 か月前'[39m,
+      rating: [33m3[39m,
+      text: [36m[Object][39m,
+      originalText: [36m[Object][39m,
+      authorAttribution: [36m[Object][39m,
+      publishTime: [32m'2024-12-23T00:19:59.989451Z'[39m,
+      flagContentUri: [32m'https://www.google.com/local/review/rap/report?postId=ChZDSUhNMG9nS0VJQ0FnSUR2cllHVlhnEAE&d=17924085&t=1'[39m,
+      googleMapsUri: [32m'https://www.google.com/maps/reviews/data=!4m6!14m5!1m4!2m3!1sChZDSUhNMG9nS0VJQ0FnSUR2cllHVlhnEAE!2m1!1s0x60188cda14bc3215:0x348e1e9cd94bf0b8'[39m
+    }
+  ],
+  websiteUri: [32m'https://enishi-shinjyuku.com/'[39m,
+  googleMapsUri: [32m'https://maps.google.com/?cid=3786997995674529976'[39m,
+  internationalPhoneNumber: [32m'+81 50-5266-0386'[39m,
+  weekdayDescriptions: [
+    [32m'月曜日: 17時00分～23時00分'[39m,
+    [32m'火曜日: 17時00分～23時00分'[39m,
+    [32m'水曜日: 17時00分～23時00分'[39m,
+    [32m'木曜日: 17時00分～23時00分'[39m,
+    [32m'金曜日: 17時00分～23時00分'[39m,
+    [32m'土曜日: 17時00分～23時00分'[39m,
+    [32m'日曜日: 17時00分～22時00分'[39m
+  ],
+  createdAt: Timestamp { _seconds: [33m1750341689[39m, _nanoseconds: [33m316000000[39m },
+  updatedAt: Timestamp { _seconds: [33m1750341689[39m, _nanoseconds: [33m316000000[39m },
+  isActive: [33mtrue[39m,
+  category: [32m'restaurant'[39m
+}
+[CACHE SAVE] Firestore: Saved '個室 創作和食 ワイン 縁 新宿店' (ID: ChIJFTK8FNqMGGARuPBL2ZwejjQ) to shinjuku-places.
+[firebase-admin.ts MOCK DB ACTIVE - INIT FAILURE] ...doc('ChIJ-3_eBNuMGGARNLAqqInDqNo').set() called with data: {
+  id: [32m'ChIJ-3_eBNuMGGARNLAqqInDqNo'[39m,
+  name: [32m'ディヴァーノ・ワインダイニング新宿'[39m,
+  formattedAddress: [32m'日本、〒160-0022 東京都新宿区新宿３丁目３１−１ 大伸第2ビル 5F'[39m,
+  rating: [33m4.3[39m,
+  userRatingCount: [33m94[39m,
+  photos: [
+    {
+      name: [32m'places/ChIJ-3_eBNuMGGARNLAqqInDqNo/photos/AXQCQNR6YT8hjT_kz1NkD6Bb7JgWM8R99Ay0W2t_0whI9I_6aXF3MME-JjxL5aQ3sFbw2JdRpi79MV8Cih4WnVFMqGs7jgrTzufs-h9LAdgp87DnuLwMszO61LjMW469b4pryzBl3UjGds0IKR45AAAj6TC0f1kryqdwOE5IdGjEgoNdHX3J_yMxrZZz1bJ0E9o2j3D7O0XDppIHVfPUXfTgi0RLELxPpmoj61kiCoZY_9IFlr2QMHqwbjsPuEyYKl9Rn9YpTuzdh_J5vRdan80vHFj5jNNFCgpq7EWnCeETKuAOaQ'[39m,
+      widthPx: [33m2048[39m,
+      heightPx: [33m1365[39m,
+      authorAttributions: [36m[Array][39m,
+      flagContentUri: [32m'https://www.google.com/local/imagery/report/?cb_client=maps_api_places.places_api&image_key=!1e10!2sAF1QipOgT_KS1c5CUW48ekB-wfUFSuJgVavMdhIx878b&hl=ja'[39m,
+      googleMapsUri: [32m'https://www.google.com/maps/place//data=!3m4!1e2!3m2!1sAF1QipOgT_KS1c5CUW48ekB-wfUFSuJgVavMdhIx878b!2e10!4m2!3m1!1s0x60188cdb04de7ffb:0xdaa8c389a82ab034'[39m
+    },
+    {
+      name: [32m'places/ChIJ-3_eBNuMGGARNLAqqInDqNo/photos/AXQCQNRn8NBMIzR2EbdFsJrIJBxMKJ2eZawAnn2Ae0wAFioZHqRaFMQ76zRWZLeehw5SI_HvlCKrms6F5059zVmai8qeiJkrC5vVUfMQUHal7pLBUj_moY7BHPE_a6r3iOWDhpWiTkiSpyu1jReeleERPAU8o1wl227jfVHqN8iz5xViaLdYIGlLZtt8lV7jeDc0omLpBYtGyw_KEpVai7-H0ND3aikRUnznACvIUWLfguOvfB3jbOBI7V4Ovs4uaLS0Eqpaz3nI-z6lGehf3ddgEzGEsor_M9XUbcNNfwy2AkEVuQ'[39m,
+      widthPx: [33m2048[39m,
+      heightPx: [33m1536[39m,
+      authorAttributions: [36m[Array][39m,
+      flagContentUri: [32m'https://www.google.com/local/imagery/report/?cb_client=maps_api_places.places_api&image_key=!1e10!2sAF1QipMWLfR7Lv7fkpru7UMRtrngW2VIBtFLp4W4p7k-&hl=ja'[39m,
+      googleMapsUri: [32m'https://www.google.com/maps/place//data=!3m4!1e2!3m2!1sAF1QipMWLfR7Lv7fkpru7UMRtrngW2VIBtFLp4W4p7k-!2e10!4m2!3m1!1s0x60188cdb04de7ffb:0xdaa8c389a82ab034'[39m
+    },
+    {
+      name: [32m'places/ChIJ-3_eBNuMGGARNLAqqInDqNo/photos/AXQCQNQHKwhV4EwVt3jCQqSdxNEeH3Z4XJl2o9Ruw9c_FFUkrKTn0zPXEm_EGbD2E87fiHZqRRF46KUzlgm70dGGSk9p2Ghtq-9m_bmRgmIf5jMf0jia7aUdMA29CSBGudXVQqJ14YGubFmPS4ZziSUpVZsqq_ZauUohXx_4aB74S3odi8CXfoWSlLUId0_Fr03Zicjp43t3My_k67sM0dIXekeNMeRiwRvpxZlp-3V-DWEy2Dv9U4zH0kRmii1VzCae2YnwxUCZQ0b2R2gSMi_HPeTRNft-w2mwVuJd130H5Jg6upd185TK38sI9u20ZRRGHSFeYOw9Vz-9B_C9NXXI56LV8HXXajFuI9VQZuLh-E41-WhAguCgeAPT1TzPJGWrrbwtsaoF2hNNCE4zg2E6ztsFzoBNkWb3wZOF8xB0z0PiIilx'[39m,
+      widthPx: [33m4032[39m,
+      heightPx: [33m3024[39m,
+      authorAttributions: [36m[Array][39m,
+      flagContentUri: [32m'https://www.google.com/local/imagery/report/?cb_client=maps_api_places.places_api&image_key=!1e10!2sCIHM0ogKEICAgID_3Z7ixQE&hl=ja'[39m,
+      googleMapsUri: [32m'https://www.google.com/maps/place//data=!3m4!1e2!3m2!1sCIHM0ogKEICAgID_3Z7ixQE!2e10!4m2!3m1!1s0x60188cdb04de7ffb:0xdaa8c389a82ab034'[39m
+    },
+    {
+      name: [32m'places/ChIJ-3_eBNuMGGARNLAqqInDqNo/photos/AXQCQNQkmamth70uxkg2kEvoMRi9fzNMtCQ5K4231S2FFvSpkIrX3jr0KhuunD2PgCb4MY0q9OatVDmyiD_LkwzvniJvBtfYbF9EK-DVqemDXpdWaFS_zYykBBoPYIlRgJ_vocxZXxilMykjFUlwrGZqphBEJx7TnkY8EA42aa_Uec8SMvm56fNZ5ex0j9HVLCx6qj5xPhQFzm-A9cKxsEI6dCiu6KzPUfQKynWEb7iseCU81L2dG1iFR2SDs2tgtDgbkEqscScIZMRKZXxoJwe6tTLKsPJuPvf6ihVJF0B6RJzKK_tiuupZLkq8RURWHCJqrL3Fvet0G8iaAftDANnq5YBFA9U6DXZh6L_1LjsNHZDmwCtTsnqfuSd-kR6rBQTbhhtH9z8LYeM0qVS096008PP4E9p7x9bWF0V6WN2D38UddA'[39m,
+      widthPx: [33m1179[39m,
+      heightPx: [33m1179[39m,
+      authorAttributions: [36m[Array][39m,
+      flagContentUri: [32m'https://www.google.com/local/imagery/report/?cb_client=maps_api_places.places_api&image_key=!1e10!2sCIHM0ogKEICAgICXnNWuHw&hl=ja'[39m,
+      googleMapsUri: [32m'https://www.google.com/maps/place//data=!3m4!1e2!3m2!1sCIHM0ogKEICAgICXnNWuHw!2e10!4m2!3m1!1s0x60188cdb04de7ffb:0xdaa8c389a82ab034'[39m
+    },
+    {
+      name: [32m'places/ChIJ-3_eBNuMGGARNLAqqInDqNo/photos/AXQCQNRxPe_zaRl9G-4XDQCpw3dD6bd1eHAwH_-9m57SHwr3nm38mpwuqPeVC2Bpnc78PKUdzbkSLt2pNAYgosFXhxD0Audg4KsF4PPnt_zrwCfRTtUR1GqqVBbe7siCFbHVR0oTWjwdAmLP2Xr2l6p9Awhgv53Gir31YMvuBhsUVAv313j_ayDU1ldoltC6Xi82oJLZeeeVhgjhcYS4gOQvRCjD_n4J1_D4PiU49gEwr3vouOexR5t_ftQtL8CfBjRp0TcpLko5Fia5DT1YAgqXvjCAyDfi3ImdIHNvEnA2_6Ldaj_FUSXkUOywaKbpcfvAfFZR1BApxrWM8DPiPwer1aevsLl8DWblVQe7EuPB8Ai5g5fvZKR3RgreYCp8PESeP79DlcH8JUXd-1bCJEfa4mB3L0lMdsBsmx_ZPiZRdEwveAXs'[39m,
+      widthPx: [33m1440[39m,
+      heightPx: [33m1080[39m,
+      authorAttributions: [36m[Array][39m,
+      flagContentUri: [32m'https://www.google.com/local/imagery/report/?cb_client=maps_api_places.places_api&image_key=!1e10!2sCIHM0ogKEICAgIDvy7ni2wE&hl=ja'[39m,
+      googleMapsUri: [32m'https://www.google.com/maps/place//data=!3m4!1e2!3m2!1sCIHM0ogKEICAgIDvy7ni2wE!2e10!4m2!3m1!1s0x60188cdb04de7ffb:0xdaa8c389a82ab034'[39m
+    },
+    {
+      name: [32m'places/ChIJ-3_eBNuMGGARNLAqqInDqNo/photos/AXQCQNQTwhbHMajZQ7CoD-CU6KX4f2ki-JW1wUvZpxQ1SK3Zq4eV2JReMPFaXcp3zTFKz3Jan96IiQYtcuCeqjd0Pkwrc90pqtIfkVJwpRR5GcTvnzW4pq2-lQOcRB_JehN6pibUTr89obHv1MzNxutwL2z5FgRinNWXc4b6z0dliqcnFPRAQDix2praDYeWk87FZeBYMfoEVbOPivzQCihCBSaxzPwq5SNjdPqucwoSnvbZ11EepZxKI5JiEjChwcQvpQkR2eIhrwUWeKXxsqKxvjKGyDhdYNWfxa2a1A91IhhVHxUrNxT10bc-Mx-PY1GILBqMZ2bORxMCNDo-0RRnXB2OSbv1eIaPaBoFdk_JHIv7NMkhrKRaSq0DPYTu-BsF0p-bgbi-sa52pXBYuoCgdCos0JSIR0QN7_xVvT3RZ5jcHw'[39m,
+      widthPx: [33m4032[39m,
+      heightPx: [33m3024[39m,
+      authorAttributions: [36m[Array][39m,
+      flagContentUri: [32m'https://www.google.com/local/imagery/report/?cb_client=maps_api_places.places_api&image_key=!1e10!2sCIHM0ogKEICAgIDGx7jpGw&hl=ja'[39m,
+      googleMapsUri: [32m'https://www.google.com/maps/place//data=!3m4!1e2!3m2!1sCIHM0ogKEICAgIDGx7jpGw!2e10!4m2!3m1!1s0x60188cdb04de7ffb:0xdaa8c389a82ab034'[39m
+    },
+    {
+      name: [32m'places/ChIJ-3_eBNuMGGARNLAqqInDqNo/photos/AXQCQNSSCA4YSy6AsA_QidgNpPWRMpT32sz5GmN7OJAW0JYhXSc1aQbg3xTDAeoawvOxDDyqICFmuJmWZAHZ3zHoeU8QaXu00nWjev_j0_5yGQ10F7SsW84-9cn9oxMhHj56UjswQOlhgdayDH7qxUJwBJ-DDeuR5u3YuGlZOfoQunTs4iec59hui-_HkAOzd8AOMZ-hBXWQRNWUiIOfEQNpX7rE3kM7PaqZS8RnbJDVbO8HpHAcD8y06reS25TNdKmFmnxNC6-_iZpDCmL1Zb8-F_wVosvO9AfEaFgd4ROoOnt_HLMj-14FJgR8QZvOuJwlnZ6DZ5YGLN5lUDxU7Eo0CiA8uhjBNcYnOzE7yVWFG-34UprmPzNV3uQHAwi2vHx6ycBkNLlXYWgOYjOhzTByuN37ubQvBFJAFPchWSIjeHQ0_fcH'[39m,
+      widthPx: [33m4032[39m,
+      heightPx: [33m3024[39m,
+      authorAttributions: [36m[Array][39m,
+      flagContentUri: [32m'https://www.google.com/local/imagery/report/?cb_client=maps_api_places.places_api&image_key=!1e10!2sCIHM0ogKEICAgID_3Z7i5QE&hl=ja'[39m,
+      googleMapsUri: [32m'https://www.google.com/maps/place//data=!3m4!1e2!3m2!1sCIHM0ogKEICAgID_3Z7i5QE!2e10!4m2!3m1!1s0x60188cdb04de7ffb:0xdaa8c389a82ab034'[39m
+    },
+    {
+      name: [32m'places/ChIJ-3_eBNuMGGARNLAqqInDqNo/photos/AXQCQNQh4BAykfYcVWs5deRlpUh0Xr38BxDU9FNziCO_KXQ-_uqxzedAJxIMfQRsb36KVpI3DRnaSKXYkKaVjXY7y-u4eBoz4QhEJ4Rnsxhz-cIwfFJJkzJUcfYa4lh5rhHKgC49_KjamBBstWohmQJLtUPCB_ULCqu1r3QQV8U-j8JlW3otvRF-fwXcshHcEfN8sUBRf6zh2AbnEqS6kHL3Nw2u7KU6sZAJ_dpiyOXwD29h9PxQc_3EvUzGezT-yX4kNNuSqXytNCMc8-qitZCoYqHqbG19GQ6bVH5SFzw2rHkbgHTjArCUiEwyEVub4AoluUejR2_FpWhZjd3BzAuqPzqyxNpuuMRl8QnDNI3BIeiaj0RWCN_rSpw2Ul4eiBbA9EM4p-9hr1gSFOZuiKNrAF7TubQqt2A16B6IhEANM8ga4w'[39m,
+      widthPx: [33m2880[39m,
+      heightPx: [33m2160[39m,
+      authorAttributions: [36m[Array][39m,
+      flagContentUri: [32m'https://www.google.com/local/imagery/report/?cb_client=maps_api_places.places_api&image_key=!1e10!2sCIHM0ogKEICAgIDulZuMcA&hl=ja'[39m,
+      googleMapsUri: [32m'https://www.google.com/maps/place//data=!3m4!1e2!3m2!1sCIHM0ogKEICAgIDulZuMcA!2e10!4m2!3m1!1s0x60188cdb04de7ffb:0xdaa8c389a82ab034'[39m
+    },
+    {
+      name: [32m'places/ChIJ-3_eBNuMGGARNLAqqInDqNo/photos/AXQCQNQYwWVoM1Nmc8OJ1OcVd4v8232IjFsrOgdcoUIdfVTs7XYFx8sX0oNU45chIRQvlSsIlXQKuzYDMQOPKANjHEWhsqWGfs6j92spLd-mpksAP31cQISxB__Hp1ME_vNbosTOKbM29R57uZX1wSg4O2XmI2IK2yrlpC7MW5YVRk7EsVj_JJNKxg7saeoSavWjtstsZX8U8c0TrAwWjMJhbihh6VKfjMu_PqFwrkLcRcCkobm638G0bmS2xcFcgRvAJ6wVMI3bd7VuUJMDb25UrdGq3mLjyBLcB9BIMHXMsgo_J3zIOggSVoFE3g7txYcFQfWH-7pvgB4M4n-qMO2RFYVHliiLgY8zxMJ8Wi43Mm5eyrDNpRepGIpW9FgqqUW9BtWwf8Zqx90_TRY4GGTqi5gJdUyroqE5thwBEF-bEcIYxA'[39m,
+      widthPx: [33m2880[39m,
+      heightPx: [33m2160[39m,
+      authorAttributions: [36m[Array][39m,
+      flagContentUri: [32m'https://www.google.com/local/imagery/report/?cb_client=maps_api_places.places_api&image_key=!1e10!2sCIHM0ogKEICAgIDulZusIw&hl=ja'[39m,
+      googleMapsUri: [32m'https://www.google.com/maps/place//data=!3m4!1e2!3m2!1sCIHM0ogKEICAgIDulZusIw!2e10!4m2!3m1!1s0x60188cdb04de7ffb:0xdaa8c389a82ab034'[39m
+    },
+    {
+      name: [32m'places/ChIJ-3_eBNuMGGARNLAqqInDqNo/photos/AXQCQNRddCzeF6TeSvfYz4CvUOuEEjNUcBpKbUIlqRLWrxDMXb_N6_ctJlKVus5MO5OCbb_Etpm_DUY88CauUabiIB3e0umVpEBNV7xfZRcptWs3up5o13kgHcClUICRwKxj6fYR2IxcFJcnud7HDrDLHTgMRqr4WqW_38n1ThtSx5aowzcgvBkgJPu-Fe4M_-U-UlGZc1N9prFMF_iJuj3l7VF5hXDBCXoIPOD8NyJu7T4hgnqt7MieqdKlgMHdF8KKCCOBKo3h8zgFZjvicCqEoAcK2YnhdeX32I-mGLBXCC1RnQp1BKdUTgk_ZxoVmAlNvBNIsCDNhpqYUMtQvfRjhI4PyIw_4j0GMIPN8ino3muvITOEmKQdEeA55fcw_p46qe_HB_O9QIV8bo3LiCl_4AsHmcpJvtAw8KS5SICxi4efKQ'[39m,
+      widthPx: [33m4032[39m,
+      heightPx: [33m3024[39m,
+      authorAttributions: [36m[Array][39m,
+      flagContentUri: [32m'https://www.google.com/local/imagery/report/?cb_client=maps_api_places.places_api&image_key=!1e10!2sCIHM0ogKEICAgID_3Z7iZQ&hl=ja'[39m,
+      googleMapsUri: [32m'https://www.google.com/maps/place//data=!3m4!1e2!3m2!1sCIHM0ogKEICAgID_3Z7iZQ!2e10!4m2!3m1!1s0x60188cdb04de7ffb:0xdaa8c389a82ab034'[39m
+    }
+  ],
+  reviews: [
+    {
+      name: [32m'places/ChIJ-3_eBNuMGGARNLAqqInDqNo/reviews/ChZDSUhNMG9nS0VJQ0FnSUNYbk5XdVp3EAE'[39m,
+      relativePublishTimeDescription: [32m'8 か月前'[39m,
+      rating: [33m5[39m,
+      text: [36m[Object][39m,
+      originalText: [36m[Object][39m,
+      authorAttribution: [36m[Object][39m,
+      publishTime: [32m'2024-10-14T05:09:14.247655Z'[39m,
+      flagContentUri: [32m'https://www.google.com/local/review/rap/report?postId=ChZDSUhNMG9nS0VJQ0FnSUNYbk5XdVp3EAE&d=17924085&t=1'[39m,
+      googleMapsUri: [32m'https://www.google.com/maps/reviews/data=!4m6!14m5!1m4!2m3!1sChZDSUhNMG9nS0VJQ0FnSUNYbk5XdVp3EAE!2m1!1s0x60188cdb04de7ffb:0xdaa8c389a82ab034'[39m
+    },
+    {
+      name: [32m'places/ChIJ-3_eBNuMGGARNLAqqInDqNo/reviews/ChdDSUhNMG9nS0VJQ0FnTURJdWZPdXFnRRAB'[39m,
+      relativePublishTimeDescription: [32m'2 か月前'[39m,
+      rating: [33m5[39m,
+      text: [36m[Object][39m,
+      originalText: [36m[Object][39m,
+      authorAttribution: [36m[Object][39m,
+      publishTime: [32m'2025-04-11T12:12:17.035692Z'[39m,
+      flagContentUri: [32m'https://www.google.com/local/review/rap/report?postId=ChdDSUhNMG9nS0VJQ0FnTURJdWZPdXFnRRAB&d=17924085&t=1'[39m,
+      googleMapsUri: [32m'https://www.google.com/maps/reviews/data=!4m6!14m5!1m4!2m3!1sChdDSUhNMG9nS0VJQ0FnTURJdWZPdXFnRRAB!2m1!1s0x60188cdb04de7ffb:0xdaa8c389a82ab034'[39m
+    },
+    {
+      name: [32m'places/ChIJ-3_eBNuMGGARNLAqqInDqNo/reviews/ChZDSUhNMG9nS0VJQ0FnSURfM1o3aUJREAE'[39m,
+      relativePublishTimeDescription: [32m'4 か月前'[39m,
+      rating: [33m4[39m,
+      text: [36m[Object][39m,
+      originalText: [36m[Object][39m,
+      authorAttribution: [36m[Object][39m,
+      publishTime: [32m'2025-01-26T10:57:33.615059Z'[39m,
+      flagContentUri: [32m'https://www.google.com/local/review/rap/report?postId=ChZDSUhNMG9nS0VJQ0FnSURfM1o3aUJREAE&d=17924085&t=1'[39m,
+      googleMapsUri: [32m'https://www.google.com/maps/reviews/data=!4m6!14m5!1m4!2m3!1sChZDSUhNMG9nS0VJQ0FnSURfM1o3aUJREAE!2m1!1s0x60188cdb04de7ffb:0xdaa8c389a82ab034'[39m
+    },
+    {
+      name: [32m'places/ChIJ-3_eBNuMGGARNLAqqInDqNo/reviews/ChdDSUhNMG9nS0VJQ0FnSUNVd05tdjZRRRAB'[39m,
+      relativePublishTimeDescription: [32m'5 年前'[39m,
+      rating: [33m5[39m,
+      text: [36m[Object][39m,
+      originalText: [36m[Object][39m,
+      authorAttribution: [36m[Object][39m,
+      publishTime: [32m'2019-07-13T23:10:29.939256Z'[39m,
+      flagContentUri: [32m'https://www.google.com/local/review/rap/report?postId=ChdDSUhNMG9nS0VJQ0FnSUNVd05tdjZRRRAB&d=17924085&t=1'[39m,
+      googleMapsUri: [32m'https://www.google.com/maps/reviews/data=!4m6!14m5!1m4!2m3!1sChdDSUhNMG9nS0VJQ0FnSUNVd05tdjZRRRAB!2m1!1s0x60188cdb04de7ffb:0xdaa8c389a82ab034'[39m
+    },
+    {
+      name: [32m'places/ChIJ-3_eBNuMGGARNLAqqInDqNo/reviews/ChdDSUhNMG9nS0VJQ0FnSUM3MmZTWHlBRRAB'[39m,
+      relativePublishTimeDescription: [32m'10 か月前'[39m,
+      rating: [33m5[39m,
+      text: [36m[Object][39m,
+      originalText: [36m[Object][39m,
+      authorAttribution: [36m[Object][39m,
+      publishTime: [32m'2024-08-17T01:59:09.257655Z'[39m,
+      flagContentUri: [32m'https://www.google.com/local/review/rap/report?postId=ChdDSUhNMG9nS0VJQ0FnSUM3MmZTWHlBRRAB&d=17924085&t=1'[39m,
+      googleMapsUri: [32m'https://www.google.com/maps/reviews/data=!4m6!14m5!1m4!2m3!1sChdDSUhNMG9nS0VJQ0FnSUM3MmZTWHlBRRAB!2m1!1s0x60188cdb04de7ffb:0xdaa8c389a82ab034'[39m
+    }
+  ],
+  websiteUri: [32m'https://tiny-corp.com/divano/'[39m,
+  googleMapsUri: [32m'https://maps.google.com/?cid=15756058292354986036'[39m,
+  internationalPhoneNumber: [32m'+81 3-6273-2876'[39m,
+  weekdayDescriptions: [
+    [32m'月曜日: 17時00分～23時00分'[39m,
+    [32m'火曜日: 定休日'[39m,
+    [32m'水曜日: 17時00分～23時00分'[39m,
+    [32m'木曜日: 17時00分～23時00分'[39m,
+    [32m'金曜日: 17時00分～23時00分'[39m,
+    [32m'土曜日: 15時00分～23時00分'[39m,
+    [32m'日曜日: 15時00分～23時00分'[39m
+  ],
+  createdAt: Timestamp { _seconds: [33m1750341689[39m, _nanoseconds: [33m346000000[39m },
+  updatedAt: Timestamp { _seconds: [33m1750341689[39m, _nanoseconds: [33m346000000[39m },
+  isActive: [33mtrue[39m,
+  category: [32m'restaurant'[39m
+}
+[CACHE SAVE] Firestore: Saved 'ディヴァーノ・ワインダイニング新宿' (ID: ChIJ-3_eBNuMGGARNLAqqInDqNo) to shinjuku-places.
+Successfully fetched/retrieved details for 2 candidates for AI analysis.
+Step 4: Running final AI analysis on detailed candidates...
+Calling analyzeRestaurantReviews (for Kanji) for: 個室 創作和食 ワイン 縁 新宿店
+Calling analyzeRestaurantReviews (for Kanji) for: ディヴァーノ・ワインダイニング新宿
+Returning 2 final recommendations from skilled secretary.
+AI selected 2 final recommendations.
+Step 5: Fetching photo URLs and formatting final results...
+All steps completed. Returning final recommendations to client.
+ POST /?monospaceUid=722168 [32m200[39m in 11161ms
+ [32m[1m✓[22m[39m Compiled in 384ms
+ [32m[1m✓[22m[39m Compiled / in 103ms
+[firebase-admin.ts] Module starting to load. Timestamp: 2025-06-19T14:06:12.738Z
+[firebase-admin.ts] NODE_ENV: development
+[firebase-admin.ts] --- Logging Direct Environment Variables (from .env.local or App Hosting direct value) ---
+[firebase-admin.ts] TEST_VAR_DIRECT: UNDEFINED
+[firebase-admin.ts] ANOTHER_TEST_VAR: UNDEFINED
+[firebase-admin.ts] --- Finished Logging Direct Environment Variables ---
+[firebase-admin.ts] --- Logging Secret Environment Variables (from .env.local or Secret Manager) ---
+[firebase-admin.ts] FIREBASE_PROJECT_ID: EXISTS (length: 17)
+[firebase-admin.ts] FIREBASE_CLIENT_EMAIL: EXISTS (length: 65)
+[firebase-admin.ts] FIREBASE_PRIVATE_KEY: EXISTS (length: 1704)
+[firebase-admin.ts] FIREBASE_PRIVATE_KEY (preview, first 30 after any processing): -----BEGIN PRIVATE KEY-----
+MI...
+[firebase-admin.ts] FIREBASE_PRIVATE_KEY (preview, last 30 after any processing): ...V8=
+-----END PRIVATE KEY-----
+
+[firebase-admin.ts] FIREBASE_PRIVATE_KEY contains literal \\n (before replace): false
+[firebase-admin.ts] FIREBASE_PRIVATE_KEY (after replace) contains actual newline: true
+[firebase-admin.ts] GOOGLE_PLACES_API_KEY: EXISTS (length: 39)
+[firebase-admin.ts] GEMINI_API_KEY: EXISTS (length: 39)
+[firebase-admin.ts] NEXT_PUBLIC_FIREBASE_API_KEY: EXISTS (length: 39)
+[firebase-admin.ts] NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: EXISTS (length: 33)
+[firebase-admin.ts] NEXT_PUBLIC_FIREBASE_PROJECT_ID: EXISTS (length: 17)
+[firebase-admin.ts] NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: EXISTS (length: 37)
+[firebase-admin.ts] NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: EXISTS (length: 11)
+[firebase-admin.ts] NEXT_PUBLIC_FIREBASE_APP_ID: EXISTS (length: 40)
+[firebase-admin.ts] --- Finished Logging Secret Environment Variables ---
+[firebase-admin.ts] No Firebase admin apps initialized. Attempting to initialize...
+[firebase-admin.ts] All required Admin SDK env vars seem present. Preparing service account object...
+[firebase-admin.ts] Service account object constructed. Checking admin object before initializeApp()...
+[firebase-admin.ts] Type of admin object: object
+[firebase-admin.ts] admin.initializeApp and admin.credential.cert appear to be functions.
+[firebase-admin.ts] Calling admin.initializeApp()...
+✅ [firebase-admin.ts] Firebase Admin SDK initialized successfully!
+[firebase-admin.ts] Module finished loading.
+ GET / [32m200[39m in 3001ms

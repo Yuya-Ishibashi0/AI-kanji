@@ -40,11 +40,20 @@ secretEnvVarsToLog.forEach(varName => {
   if (value !== undefined) {
     console.log(`[firebase-admin.ts] ${varName}: EXISTS (length: ${value.length})`);
     if (varName === 'FIREBASE_PRIVATE_KEY') {
-      console.log(`[firebase-admin.ts] ${varName} (preview, first 30 after any processing): ${value.substring(0,30)}...`);
-      console.log(`[firebase-admin.ts] ${varName} (preview, last 30 after any processing): ...${value.substring(value.length - 30)}`);
-      console.log(`[firebase-admin.ts] ${varName} contains literal \\\\n (before replace): ${value.includes('\\n')}`);
-      const formattedForCheck = value.replace(/\\n/g, '\n');
-      console.log(`[firebase-admin.ts] ${varName} (after replace) contains actual newline: ${formattedForCheck.includes('\n')}`);
+      const previewLength = 30;
+      // Ensure value is a string and long enough before trying substring
+      if (typeof value === 'string' && value.length > previewLength * 2) {
+        console.log(`[firebase-admin.ts] ${varName} (preview, first ${previewLength} after any processing): ${value.substring(0,previewLength)}...`);
+        console.log(`[firebase-admin.ts] ${varName} (preview, last ${previewLength} after any processing): ...${value.substring(value.length - previewLength)}`);
+      } else if (typeof value === 'string') {
+        console.log(`[firebase-admin.ts] ${varName} (full value as it's short): ${value}`);
+      }
+      // Check for literal \n and actual newline after potential replacement
+      if (typeof value === 'string') {
+        console.log(`[firebase-admin.ts] ${varName} contains literal \\\\n (before replace): ${value.includes('\\n')}`);
+        const formattedForCheck = value.replace(/\\n/g, '\n');
+        console.log(`[firebase-admin.ts] ${varName} (after replace) contains actual newline: ${formattedForCheck.includes('\n')}`);
+      }
     }
   } else {
     console.log(`[firebase-admin.ts] ${varName}: UNDEFINED`);
@@ -54,7 +63,8 @@ console.log('[firebase-admin.ts] --- Finished Logging Secret Environment Variabl
 
 
 import * as admin from 'firebase-admin';
-import type { Firestore, ServiceAccount } from 'firebase-admin/firestore';
+import type { ServiceAccount } from 'firebase-admin/app'; // Corrected import for ServiceAccount
+import type { Firestore } from 'firebase-admin/firestore';
 
 let adminDb: Firestore;
 
@@ -93,7 +103,21 @@ if (!admin.apps.length) {
         clientEmail: clientEmail,
         privateKey: privateKey,
       };
-      console.log('[firebase-admin.ts] Service account object constructed. Calling admin.initializeApp()...');
+      console.log('[firebase-admin.ts] Service account object constructed. Checking admin object before initializeApp()...');
+      console.log('[firebase-admin.ts] Type of admin object:', typeof admin);
+      if (admin && typeof admin.initializeApp === 'function' && admin.credential && typeof admin.credential.cert === 'function') {
+          console.log('[firebase-admin.ts] admin.initializeApp and admin.credential.cert appear to be functions.');
+      } else {
+          console.error('[firebase-admin.ts] CRITICAL: admin object or its key methods (initializeApp, credential.cert) are not correctly defined!');
+          if (admin) {
+              console.error('[firebase-admin.ts] admin.initializeApp type:', typeof admin.initializeApp);
+              console.error('[firebase-admin.ts] admin.credential type:', typeof admin.credential);
+              if (admin.credential) {
+                console.error('[firebase-admin.ts] admin.credential.cert type:', typeof admin.credential.cert);
+              }
+          }
+      }
+      console.log('[firebase-admin.ts] Calling admin.initializeApp()...');
       admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
       });
@@ -101,18 +125,24 @@ if (!admin.apps.length) {
       adminDb = admin.firestore();
     } catch (e: any) {
       console.error('🔥 [firebase-admin.ts FATAL ERROR] Firebase Admin SDK initialization FAILED. Firestore functionality will be MOCKED.');
-      console.error(`[firebase-admin.ts ERROR DETAILS] Error Type: ${e.constructor.name}`);
-      if (e.message) {
+      console.error(`[firebase-admin.ts ERROR DETAILS] Error Type: ${e?.constructor?.name || typeof e}`);
+      if (e?.message) {
         console.error(`[firebase-admin.ts ERROR DETAILS] Message: ${e.message}`);
       }
-      if (e.code) {
+      if (e?.code) { // Standard error code
         console.error(`[firebase-admin.ts ERROR DETAILS] Code: ${e.code}`);
       }
-      if (e.errorInfo) { // Firebase specific error info
+      if (e?.errorInfo) { // Firebase specific error info
          console.error(`[firebase-admin.ts ERROR DETAILS] Firebase Error Info Code: ${e.errorInfo.code}`);
          console.error(`[firebase-admin.ts ERROR DETAILS] Firebase Error Info Message: ${e.errorInfo.message}`);
       }
-      console.error('[firebase-admin.ts ERROR DETAILS] Full error object:', e);
+      // Log the full error object, but be cautious with potentially large objects in production
+      // For debugging, this is useful.
+      try {
+        console.error('[firebase-admin.ts ERROR DETAILS] Full error object (stringified):', JSON.stringify(e, Object.getOwnPropertyNames(e), 2));
+      } catch (stringifyError) {
+        console.error('[firebase-admin.ts ERROR DETAILS] Full error object (could not stringify, logging as is):', e);
+      }
       
       adminDb = {
         collection: (name: string) => {
@@ -136,9 +166,19 @@ if (!admin.apps.length) {
   }
 } else {
   console.log('[firebase-admin.ts] Firebase admin app already initialized. Reusing existing instance.');
-  adminDb = admin.firestore();
+  // Ensure adminDb is assigned here as well if an app already exists
+  if (admin.apps[0]) { // Check if the first app is not null
+    adminDb = admin.firestore(admin.apps[0]); // Get firestore from the existing app
+  } else {
+    // This case should ideally not happen if admin.apps.length > 0
+    console.error('[firebase-admin.ts] CRITICAL: admin.apps array is populated but contains no valid app. Mocking adminDb.');
+    // Fallback to mock, similar to initialization failure
+    adminDb = { /* ... mock implementation ... */ } as any;
+  }
 }
 
 export { adminDb };
 
 console.log('[firebase-admin.ts] Module finished loading.');
+
+    
