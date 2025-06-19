@@ -1002,3 +1002,34 @@ MI...
 [firebase-admin.ts] Firebase admin app already initialized. Reusing existing instance.
 [firebase-admin.ts] Module finished loading.
  GET / [32m200[39m in 2967ms
+Step 1 & 2: Starting Places API search and AI primary filtering...
+Found 10 initial candidates from Places API.
+AI primary filtering narrowed down to 2 candidates: ChIJFTK8FNqMGGARuPBL2ZwejjQ, ChIJ-3_eBNuMGGARNLAqqInDqNo
+Step 3: Fetching details for filtered candidates (cache-first strategy)...
+[CACHE HIT] Firestore: Fetched '個室 創作和食 ワイン 縁 新宿店' (ID: ChIJFTK8FNqMGGARuPBL2ZwejjQ) from shinjuku-places.
+[CACHE HIT] Firestore: Fetched 'ディヴァーノ・ワインダイニング新宿' (ID: ChIJ-3_eBNuMGGARNLAqqInDqNo) from shinjuku-places.
+Successfully fetched/retrieved details for 2 candidates for AI analysis.
+Step 4: Running final AI analysis on detailed candidates...
+Calling analyzeRestaurantReviews (for Kanji) for: ディヴァーノ・ワインダイニング新宿
+Calling analyzeRestaurantReviews (for Kanji) for: 個室 創作和食 ワイン 縁 新宿店
+Returning 2 final recommendations from skilled secretary.
+AI selected 2 final recommendations.
+Step 5: Fetching photo URLs and formatting final results...
+All steps completed. Returning final recommendations to client.
+ POST / [32m200[39m in 7696ms
+ [32m[1m✓[22m[39m Compiled in 1528ms
+ [32m[1m✓[22m[39m Compiled / in 71ms
+[firebase-admin.ts] Module starting to load. Timestamp: 2025-06-19T14:57:07.573Z
+[firebase-admin.ts] NODE_ENV: development
+[firebase-admin.ts] --- Initial Firebase Admin SDK Env Var Check (Existence & Length) ---
+[firebase-admin.ts] FIREBASE_PROJECT_ID: EXISTS (length: 17)
+[firebase-admin.ts] FIREBASE_CLIENT_EMAIL: EXISTS (length: 65)
+[firebase-admin.ts] FIREBASE_PRIVATE_KEY: EXISTS (length: 1704)
+[firebase-admin.ts] GOOGLE_PLACES_API_KEY: EXISTS
+[firebase-admin.ts] GEMINI_API_KEY: EXISTS
+[firebase-admin.ts] --- End Initial Firebase Admin SDK Env Var Check ---
+[firebase-admin.ts] Firebase admin app already initialized. Reusing existing instance.
+[firebase-admin.ts] Module finished loading.
+(node:150792) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 SIGTERM listeners added to [process]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(Use `node --trace-warnings ...` to show where the warning was created)
+ GET / [32m200[39m in 3602ms
