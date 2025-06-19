@@ -1048,3 +1048,4 @@ All steps completed. Returning final recommendations to client.
 [firebase-admin.ts] Module finished loading.
 (node:150792) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 SIGINT listeners added to [process]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
  GET / [32m200[39m in 2056ms
+ GET / [32m200[39m in 372ms
