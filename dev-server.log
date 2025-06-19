@@ -1063,3 +1063,146 @@ All steps completed. Returning final recommendations to client.
 [firebase-admin.ts] Firebase admin app already initialized. Reusing existing instance.
 [firebase-admin.ts] Module finished loading.
  GET / [32m200[39m in 3518ms
+Step 1: Starting Places API search (textSearchNew)...
+Found 20 initial candidates from Places API.
+--- Review Summaries for AI Primary Filtering (initialCandidates) ---
+[
+  {
+    "id": "ChIJO8w-gdyMGGARNnj3DCEbWN0",
+    "name": "ヴィオレット Violet",
+    "reviewSummary": "N/A"
+  },
+  {
+    "id": "ChIJFTK8FNqMGGARuPBL2ZwejjQ",
+    "name": "個室 創作和食 ワイン 縁 新宿店",
+    "reviewSummary": "N/A"
+  },
+  {
+    "id": "ChIJ-3_eBNuMGGARNLAqqInDqNo",
+    "name": "ディヴァーノ・ワインダイニング新宿",
+    "reviewSummary": "N/A"
+  },
+  {
+    "id": "ChIJ9-EnYtuMGGARLYE_upAyd3c",
+    "name": "ワイン厨房 晩酌邸",
+    "reviewSummary": "N/A"
+  },
+  {
+    "id": "ChIJnavyf9yMGGARN7D81o39BW0",
+    "name": "ビストロ向日葵",
+    "reviewSummary": "N/A"
+  },
+  {
+    "id": "ChIJB89VXdGMGGAR-cpFGTSmeUI",
+    "name": "イタリアン＆ワインバル ビアージョ 新宿",
+    "reviewSummary": "N/A"
+  },
+  {
+    "id": "ChIJZzWUb9uMGGAR0syjevvcet0",
+    "name": "MARUGO GRANDE（マルゴグランデ）",
+    "reviewSummary": "N/A"
+  },
+  {
+    "id": "ChIJ60TS5tmMGGARH7z8H87ddWQ",
+    "name": "スミヤ 新宿（SUMIYA）",
+    "reviewSummary": "N/A"
+  },
+  {
+    "id": "ChIJ_____9yMGGARwuQ-JjFAnLI",
+    "name": "MARUGO OTTO マルゴ・オット",
+    "reviewSummary": "N/A"
+  },
+  {
+    "id": "ChIJ69foYNuMGGARl5NF02xXyz0",
+    "name": "ステーキ＆ワイン 371BAR ‐サンナナイチバル‐ 新宿三丁目",
+    "reviewSummary": "N/A"
+  },
+  {
+    "id": "ChIJuRRLSNaMGGARnZ1htSb9R5I",
+    "name": "blanDouce bar&kitchen 新宿西口",
+    "reviewSummary": "N/A"
+  },
+  {
+    "id": "ChIJ__yNWdaMGGAR45SnIgodf1w",
+    "name": "ROBATA幸",
+    "reviewSummary": "N/A"
+  },
+  {
+    "id": "ChIJM-IeYZSNGGARGFpnIINBt9E",
+    "name": "ワインの酒場。ディプント西新宿一丁目店",
+    "reviewSummary": "N/A"
+  },
+  {
+    "id": "ChIJQ9OuadqMGGARhjTle1jUkvQ",
+    "name": "ワイン食堂 ブルマーレ 新宿店",
+    "reviewSummary": "N/A"
+  },
+  {
+    "id": "ChIJkzB6JtaMGGARyuGCcgNgm5c",
+    "name": "ROBATA 幸 2nd",
+    "reviewSummary": "N/A"
+  },
+  {
+    "id": "ChIJL8mvoNyMGGARKehf_vFAuRw",
+    "name": "ワインの酒場。ディプント新宿三丁目店",
+    "reviewSummary": "N/A"
+  },
+  {
+    "id": "ChIJ9-EnYtuMGGAR2UgdnfDRxzY",
+    "name": "クッチーナバル 然 新宿店",
+    "reviewSummary": "N/A"
+  },
+  {
+    "id": "ChIJ___zrteMGGARA0tRi6bv9zI",
+    "name": "ワインの酒場。ディプント 新宿西口店",
+    "reviewSummary": "N/A"
+  },
+  {
+    "id": "ChIJQWj49tqMGGARhC1GRVBrc90",
+    "name": "ViñaVinVino 新宿店",
+    "reviewSummary": "N/A"
+  },
+  {
+    "id": "ChIJn7Z_HSONGGARbMYZJpX58bM",
+    "name": "Bistro Roven(ビストロローブン)新宿",
+    "reviewSummary": "N/A"
+  }
+]
+--------------------------------------------------------------------
+Step 2: Starting AI primary filtering (filterRestaurantsForGroup)...
+AI primary filtering narrowed down to 5 candidates: ChIJFTK8FNqMGGARuPBL2ZwejjQ, ChIJ-3_eBNuMGGARNLAqqInDqNo, ChIJ60TS5tmMGGARH7z8H87ddWQ, ChIJ69foYNuMGGARl5NF02xXyz0, ChIJQ9OuadqMGGARhjTle1jUkvQ
+Step 3: Fetching details for filtered candidates (cache-first strategy)...
+[CACHE MISS] Firestore: No data for ID: ChIJ60TS5tmMGGARH7z8H87ddWQ in shinjuku-places. Fetching from API...
+[CACHE MISS] Firestore: No data for ID: ChIJ-3_eBNuMGGARNLAqqInDqNo in shinjuku-places. Fetching from API...
+[CACHE MISS] Firestore: No data for ID: ChIJQ9OuadqMGGARhjTle1jUkvQ in shinjuku-places. Fetching from API...
+[CACHE MISS] Firestore: No data for ID: ChIJFTK8FNqMGGARuPBL2ZwejjQ in shinjuku-places. Fetching from API...
+[CACHE MISS] Firestore: No data for ID: ChIJ69foYNuMGGARl5NF02xXyz0 in shinjuku-places. Fetching from API...
+[CACHE SAVE] Firestore: Saved 'スミヤ 新宿（SUMIYA）' (ID: ChIJ60TS5tmMGGARH7z8H87ddWQ) to shinjuku-places.
+[CACHE SAVE] Firestore: Saved 'ディヴァーノ・ワインダイニング新宿' (ID: ChIJ-3_eBNuMGGARNLAqqInDqNo) to shinjuku-places.
+[CACHE SAVE] Firestore: Saved '個室 創作和食 ワイン 縁 新宿店' (ID: ChIJFTK8FNqMGGARuPBL2ZwejjQ) to shinjuku-places.
+[CACHE SAVE] Firestore: Saved 'ワイン食堂 ブルマーレ 新宿店' (ID: ChIJQ9OuadqMGGARhjTle1jUkvQ) to shinjuku-places.
+[CACHE SAVE] Firestore: Saved 'ステーキ＆ワイン 371BAR ‐サンナナイチバル‐ 新宿三丁目' (ID: ChIJ69foYNuMGGARl5NF02xXyz0) to shinjuku-places.
+Successfully fetched/retrieved details for 5 candidates for AI analysis.
+Step 4: Running final AI analysis (selectAndAnalyzeBestRestaurants)...
+Calling analyzeRestaurantReviews (for Kanji) for: 個室 創作和食 ワイン 縁 新宿店
+Calling analyzeRestaurantReviews (for Kanji) for: ディヴァーノ・ワインダイニング新宿
+Calling analyzeRestaurantReviews (for Kanji) for: ワイン食堂 ブルマーレ 新宿店
+Returning 3 final recommendations from skilled secretary.
+AI selected 3 final recommendations.
+Step 5: Fetching photo URLs and formatting final results...
+All steps completed. Returning final recommendations to client.
+ POST / [32m200[39m in 16205ms
+ [32m[1m✓[22m[39m Compiled in 1127ms
+ [32m[1m✓[22m[39m Compiled / in 67ms
+[firebase-admin.ts] Module starting to load. Timestamp: 2025-06-19T15:23:18.752Z
+[firebase-admin.ts] NODE_ENV: development
+[firebase-admin.ts] --- Initial Firebase Admin SDK Env Var Check (Existence & Length) ---
+[firebase-admin.ts] FIREBASE_PROJECT_ID: EXISTS (length: 17)
+[firebase-admin.ts] FIREBASE_CLIENT_EMAIL: EXISTS (length: 65)
+[firebase-admin.ts] FIREBASE_PRIVATE_KEY: EXISTS (length: 1704)
+[firebase-admin.ts] GOOGLE_PLACES_API_KEY: EXISTS
+[firebase-admin.ts] GEMINI_API_KEY: EXISTS
+[firebase-admin.ts] --- End Initial Firebase Admin SDK Env Var Check ---
+[firebase-admin.ts] Firebase admin app already initialized. Reusing existing instance.
+[firebase-admin.ts] Module finished loading.
+ GET / [32m200[39m in 3014ms

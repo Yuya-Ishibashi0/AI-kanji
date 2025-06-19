@@ -38,7 +38,7 @@ interface FirestorePlaceReview {
 // Firestoreの "shinjuku-places" コレクションのドキュメント構造
 interface FirestoreRestaurantDetails {
   id: string;
-  displayName: string; // APIのnameから変更
+  displayName: string; 
   formattedAddress?: string;
   rating?: number;
   userRatingCount?: number;
@@ -46,8 +46,8 @@ interface FirestoreRestaurantDetails {
   reviews: FirestorePlaceReview[];
   websiteUri?: string;
   googleMapsUri?: string;
-  nationalPhoneNumber?: string; // APIのinternationalPhoneNumberから変更
-  weekdayDescriptions?: string[]; // これはそのまま使用
+  nationalPhoneNumber?: string; 
+  weekdayDescriptions?: string[]; 
 
   // Admin fields
   createdAt: Timestamp;
@@ -116,30 +116,31 @@ export async function getRestaurantSuggestion(
         const cachedData = docSnap.data() as FirestoreRestaurantDetails;
         console.log(`[CACHE HIT] Firestore: Fetched '${cachedData?.displayName}' (ID: ${id}) from shinjuku-places.`);
 
+        // FirestoreのデータからApiRestaurantDetails型に変換（キャッシュから読み込む場合）
         const apiDetailsFromCache: ApiRestaurantDetails = {
             id: cachedData.id,
-            name: cachedData.displayName,
+            name: cachedData.displayName, // FirestoreのdisplayNameをAPIのnameフィールドにマッピング
             formattedAddress: cachedData.formattedAddress,
             rating: cachedData.rating,
             userRatingCount: cachedData.userRatingCount,
-            photos: cachedData.photos.map(p => ({
+            photos: cachedData.photos.map(p => ({ // FirestoreのPhoto型からAPIのPhoto型へ
                 name: p.name,
                 widthPx: p.widthPx,
                 heightPx: p.heightPx,
-                authorAttributions: [], // API型にはあるがFirestoreには保存しない
+                authorAttributions: [], // Firestoreには保存していないので空配列
             })),
-            reviews: cachedData.reviews.map(r => ({
-                name: '', // API型にはあるがFirestoreには保存しない
-                relativePublishTimeDescription: '', // API型にはあるがFirestoreには保存しない
+            reviews: cachedData.reviews.map(r => ({ // FirestoreのReview型からAPIのReview型へ
+                name: '', // Firestoreには保存していない
+                relativePublishTimeDescription: '', // Firestoreには保存していない
                 rating: r.rating,
                 text: r.text ? { text: r.text, languageCode: r.languageCode || 'ja' } : undefined,
-                originalText: r.text ? { text: r.text, languageCode: r.languageCode || 'ja' } : undefined,
-                authorAttribution: r.authorName ? { displayName: r.authorName, uri:'', photoUri:''} : undefined,
+                originalText: r.text ? { text: r.text, languageCode: r.languageCode || 'ja' } : undefined, // originalTextも同様に設定
+                authorAttribution: r.authorName ? { displayName: r.authorName, uri:'', photoUri:''} : undefined, // authorNameから生成
                 publishTime: r.publishTime,
             })),
             websiteUri: cachedData.websiteUri,
             googleMapsUri: cachedData.googleMapsUri,
-            internationalPhoneNumber: cachedData.nationalPhoneNumber,
+            internationalPhoneNumber: cachedData.nationalPhoneNumber, // nationalPhoneNumberをAPIのinternationalPhoneNumberに
             regularOpeningHours: cachedData.weekdayDescriptions ? { weekdayDescriptions: cachedData.weekdayDescriptions } : undefined,
         };
         return apiDetailsFromCache;
@@ -151,7 +152,7 @@ export async function getRestaurantSuggestion(
 
           const firestoreDocData: FirestoreRestaurantDetails = {
             id: detailsFromApi.id,
-            displayName: detailsFromApi.name,
+            displayName: detailsFromApi.name, // APIのnameをdisplayNameとして保存
             formattedAddress: detailsFromApi.formattedAddress,
             rating: detailsFromApi.rating,
             userRatingCount: detailsFromApi.userRatingCount,
@@ -159,23 +160,22 @@ export async function getRestaurantSuggestion(
               name: p.name,
               widthPx: p.widthPx,
               heightPx: p.heightPx,
-              // authorAttributions は保存しない
             })),
             reviews: (detailsFromApi.reviews || []).map((r: ApiPlaceReview) => ({
               authorName: r.authorAttribution?.displayName,
               languageCode: r.text?.languageCode,
-              publishTime: r.publishTime,
+              publishTime: r.publishTime, // ISO 8601 string
               rating: r.rating,
               text: r.text?.text,
             })),
             websiteUri: detailsFromApi.websiteUri,
             googleMapsUri: detailsFromApi.googleMapsUri,
-            nationalPhoneNumber: detailsFromApi.internationalPhoneNumber,
+            nationalPhoneNumber: detailsFromApi.internationalPhoneNumber, // APIのinternationalPhoneNumberをnationalPhoneNumberとして保存
             weekdayDescriptions: detailsFromApi.regularOpeningHours?.weekdayDescriptions,
             createdAt: now,
             updatedAt: now,
             isActive: true,
-            category: "restaurant", // カテゴリを固定値で設定
+            category: "restaurant", 
           };
           await docRef.set(firestoreDocData);
           console.log(`[CACHE SAVE] Firestore: Saved '${detailsFromApi.name}' (ID: ${id}) to shinjuku-places.`);
@@ -276,3 +276,4 @@ export async function getRestaurantSuggestion(
     return { error: `処理中にエラーが発生しました: ${errorMessage}` };
   }
 }
+
