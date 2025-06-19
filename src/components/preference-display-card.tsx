@@ -1,7 +1,7 @@
 
 import type { RestaurantCriteria } from "@/lib/schemas";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CalendarDays, Clock, DollarSign, MapPin, Utensils, DoorOpen, CheckSquare, XSquare } from "lucide-react";
+import { CalendarDays, Clock, DollarSign, MapPin, Utensils, DoorOpen, CheckSquare, XSquare, PartyPopper } from "lucide-react";
 
 interface PreferenceDisplayCardProps {
   criteria: RestaurantCriteria & { date: Date }; // Ensure date is Date object for display
@@ -17,6 +17,10 @@ export default function PreferenceDisplayCard({ criteria }: PreferenceDisplayCar
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
+        <div className="flex items-center">
+          <PartyPopper className="mr-2 h-5 w-5 text-muted-foreground" />
+          <strong>利用目的:</strong>&nbsp;{criteria.purposeOfUse}
+        </div>
         <div className="flex items-center">
           <CalendarDays className="mr-2 h-5 w-5 text-muted-foreground" />
           <strong>日付:</strong>&nbsp;{criteria.date.toLocaleDateString('ja-JP')}
@@ -53,3 +57,4 @@ export default function PreferenceDisplayCard({ criteria }: PreferenceDisplayCar
     </Card>
   );
 }
+

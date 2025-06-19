@@ -7,7 +7,7 @@ import {
     getRestaurantDetails,
     buildPhotoUrl,
     textSearchNew,
-    type RestaurantCandidate as ApiRestaurantCandidate, // Updated to use the one from google-places-service
+    type RestaurantCandidate as ApiRestaurantCandidate, 
     type PlaceReview as ApiPlaceReview,
     type PlacePhoto as ApiPlacePhoto,
     type RestaurantDetails as ApiRestaurantDetails
@@ -18,38 +18,34 @@ import { Timestamp } from "firebase-admin/firestore";
 import { AnalyzeRestaurantReviewsOutput, analyzeRestaurantReviews, AnalyzeRestaurantReviewsInput } from "@/ai/flows/analyze-restaurant-reviews";
 
 
-// Firestoreに保存する際の型定義 (前回ユーザー様と合意した構造)
 interface FirestoreRestaurantDetails {
   id: string;
-  displayName: string; // name から変更
+  displayName: string; 
   formattedAddress?: string;
   rating?: number;
   userRatingCount?: number;
-  photos: { // 構造変更
+  photos: { 
     name: string;
     widthPx: number;
     heightPx: number;
-    // authorAttributionsは保存しない
   }[];
-  reviews: { // 構造変更
-    authorName?: string; // authorAttribution.displayName から
-    languageCode?: string; // text.languageCode から
-    publishTime?: string; // review.publishTime から (ISO string)
+  reviews: { 
+    authorName?: string; 
+    languageCode?: string; 
+    publishTime?: string; 
     rating: number;
-    text?: string; // text.text から
-    // review.name (resource name) や relativePublishTimeDescription は保存しない
+    text?: string; 
   }[];
   websiteUri?: string;
   googleMapsUri?: string;
-  nationalPhoneNumber?: string; // internationalPhoneNumber から変更
-  weekdayDescriptions?: string[]; // これは残す
+  nationalPhoneNumber?: string; 
+  weekdayDescriptions?: string[]; 
   types?: string[];
   priceLevel?: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
   isActive: boolean;
   category: string;
-  // lastSyncAt, preview, subarea は含めない
 }
 
 
@@ -61,12 +57,11 @@ export type RecommendationResult = FinalOutput[number] & {
     googleMapsUri?: string;
     address?: string;
     rating?: number;
-    userRatingsTotal?: number; // userRatingCount から変更 (APIレスポンスに合わせる)
+    userRatingsTotal?: number; 
     types?: string[];
     priceLevel?: string;
 };
 
-// Helper function for scoring
 const calculateRatingScore = (rating?: number): number => {
   if (rating === undefined || rating < 3.7) return 0;
   return ((rating - 3.7) / (5.0 - 3.7)) * 35;
@@ -74,14 +69,14 @@ const calculateRatingScore = (rating?: number): number => {
 
 const calculateReviewCountScore = (userRatingCount?: number): number => {
   if (userRatingCount === undefined || userRatingCount < 30) return 0;
-  const score = ((userRatingCount - 30) / (300 - 30)) * 35;
+  const score = ((userRatingCount - 30) / (300 - 30)) * 35; // Assuming 300 reviews for max score
   return Math.min(Math.max(score, 0), 35);
 };
 
 const calculateCategoryScore = (types?: string[]): number => {
   if (!types || types.length === 0) return 0;
   if (types.some(type => ["clothing_store", "electronics_store"].includes(type))) {
-    return -50;
+    return -50; // Heavily penalize non-dining places
   }
   if (types.some(type => ["restaurant", "izakaya_restaurant", "food"].includes(type))) {
     return 30;
@@ -99,7 +94,10 @@ export async function getRestaurantSuggestion(
   try {
     const criteriaForAI = {
         ...criteria,
-        date: format(new Date(criteria.date), 'yyyy-MM-dd')
+        date: format(new Date(criteria.date), 'yyyy-MM-dd'),
+        // customPromptPersona and customPromptPriorities might be undefined if not in development
+        customPromptPersona: criteria.customPromptPersona,
+        customPromptPriorities: criteria.customPromptPriorities,
     };
 
     console.log("Step 1: Starting Places API search (textSearchNew)...");
@@ -110,33 +108,25 @@ export async function getRestaurantSuggestion(
       return { error: `指定された条件に一致するレストランが見つかりませんでした。` };
     }
     console.log(`Found ${initialCandidatesFromApi.length} initial candidates from Places API.`);
-
-    // --- Review Summary Logging (No longer used as reviewSummary field is removed) ---
-    // console.log("--- Review Summaries for AI Primary Filtering (initialCandidates) ---");
-    // initialCandidatesFromApi.forEach(candidate => {
-    //   console.log(`ID: ${candidate.id}, Name: ${candidate.displayName || 'N/A'}, Review Summary: N/A`);
-    // });
-    // console.log("-----------------------------------------------------------------");
-
-
+    
     console.log("Step 2: Applying mechanical filtering and scoring logic...");
     const unsuitableTypesForGroupDining = ["bar", "night_club", "shopping_mall", "department_store"];
     
     const scoredCandidates = initialCandidatesFromApi
-      .filter(candidate => { // Step A: 足切り
+      .filter(candidate => { 
         if (!candidate.userRatingCount || candidate.userRatingCount < 30) return false;
         if (!candidate.rating || candidate.rating < 3.7) return false;
         if (candidate.types && candidate.types.some(type => unsuitableTypesForGroupDining.includes(type))) return false;
         return true;
       })
-      .map(candidate => { // Step B: 品質スコア計算
+      .map(candidate => { 
         const ratingScore = calculateRatingScore(candidate.rating);
         const reviewCountScore = calculateReviewCountScore(candidate.userRatingCount);
         const categoryScore = calculateCategoryScore(candidate.types);
         const totalScore = ratingScore + reviewCountScore + categoryScore;
         return { ...candidate, totalScore, ratingScore, reviewCountScore, categoryScore };
       })
-      .filter(candidate => candidate.totalScore >= 60); // Step C: スコア60点以上
+      .filter(candidate => candidate.totalScore >= 60); 
 
     scoredCandidates.sort((a, b) => b.totalScore - a.totalScore);
 
@@ -152,7 +142,6 @@ export async function getRestaurantSuggestion(
     }
     console.log(`Mechanical filtering narrowed down to ${scoredCandidates.length} candidates.`);
 
-    // 詳細情報取得の対象を上位5件に限定
     const topCandidatesForDetails = scoredCandidates.slice(0, 5);
     const filteredPlaceIds = topCandidatesForDetails.map(c => c.id);
     console.log(`Selected top ${filteredPlaceIds.length} candidates for fetching details.`);
@@ -166,6 +155,7 @@ export async function getRestaurantSuggestion(
       if (docSnap.exists) {
         const cachedData = docSnap.data() as FirestoreRestaurantDetails;
         console.log(`[CACHE HIT] Firestore: Fetched '${cachedData?.displayName}' (ID: ${id}) from shinjuku-places.`);
+        // Transform Firestore data to ApiRestaurantDetails structure for consistency
         return {
             id: cachedData.id,
             name: cachedData.displayName, 
@@ -176,18 +166,18 @@ export async function getRestaurantSuggestion(
                 name: p.name,
                 widthPx: p.widthPx,
                 heightPx: p.heightPx,
-                authorAttributions: [], 
+                authorAttributions: [], // Not stored in Firestore per user's request
             })),
             reviews: cachedData.reviews?.map(r => ({
                 rating: r.rating,
                 text: r.text ? { text: r.text, languageCode: r.languageCode || 'ja' } : undefined,
-                originalText: r.text ? { text: r.text, languageCode: r.languageCode || 'ja' } : undefined,
-                authorAttribution: r.authorName ? { displayName: r.authorName, uri:'', photoUri:''} : undefined,
-                publishTime: r.publishTime,
+                originalText: r.text ? { text: r.text, languageCode: r.languageCode || 'ja' } : undefined, // Keep if needed for other parts
+                authorAttribution: r.authorName ? { displayName: r.authorName, uri:'', photoUri:''} : undefined, // API structure
+                publishTime: r.publishTime, // API structure
             })),
             websiteUri: cachedData.websiteUri,
             googleMapsUri: cachedData.googleMapsUri,
-            internationalPhoneNumber: cachedData.nationalPhoneNumber,
+            internationalPhoneNumber: cachedData.nationalPhoneNumber, // Use national for consistency if that's what API expects
             regularOpeningHours: cachedData.weekdayDescriptions ? { weekdayDescriptions: cachedData.weekdayDescriptions } : undefined,
             types: cachedData.types,
             priceLevel: cachedData.priceLevel,
@@ -197,9 +187,10 @@ export async function getRestaurantSuggestion(
         const detailsFromApi = await getRestaurantDetails(id);
         if (detailsFromApi) {
           const now = Timestamp.now();
+          // Transform API data to FirestoreRestaurantDetails structure
           const firestoreDocData: FirestoreRestaurantDetails = {
             id: detailsFromApi.id,
-            displayName: detailsFromApi.name,
+            displayName: detailsFromApi.name, // Use name from API
             formattedAddress: detailsFromApi.formattedAddress,
             rating: detailsFromApi.rating,
             userRatingCount: detailsFromApi.userRatingCount,
@@ -207,24 +198,25 @@ export async function getRestaurantSuggestion(
               name: p.name,
               widthPx: p.widthPx,
               heightPx: p.heightPx,
+              // authorAttributions is not saved per previous request
             })),
             reviews: (detailsFromApi.reviews || []).map((r: ApiPlaceReview) => ({
-              authorName: r.authorAttribution?.displayName,
+              authorName: r.authorAttribution?.displayName, // Save authorName
               languageCode: r.text?.languageCode,
-              publishTime: r.publishTime,
+              publishTime: r.publishTime, // Save publishTime
               rating: r.rating,
               text: r.text?.text,
             })),
             websiteUri: detailsFromApi.websiteUri,
             googleMapsUri: detailsFromApi.googleMapsUri,
-            nationalPhoneNumber: detailsFromApi.internationalPhoneNumber,
+            nationalPhoneNumber: detailsFromApi.internationalPhoneNumber, // Save as nationalPhoneNumber
             weekdayDescriptions: detailsFromApi.regularOpeningHours?.weekdayDescriptions,
             types: detailsFromApi.types,
             priceLevel: detailsFromApi.priceLevel,
             createdAt: now,
             updatedAt: now,
             isActive: true,
-            category: "restaurant",
+            category: "restaurant", 
           };
           await docRef.set(firestoreDocData);
           console.log(`[CACHE SAVE] Firestore: Saved '${detailsFromApi.name}' (ID: ${id}) to shinjuku-places.`);
@@ -268,15 +260,10 @@ export async function getRestaurantSuggestion(
       candidates: candidatesForAI,
       criteria: criteriaForAI,
     });
-
+    
     if (!topAnalyses || topAnalyses.length === 0) {
         console.log("AI (selectAndAnalyze) did not select any restaurants. Applying fallback: selecting the top scored candidate.");
-        // AIが0件を選んだ場合のフォールバック処理
-        const fallbackCandidate = candidatesForAI[0]; // candidatesForAI はスコア順にソートされているはず (元は scoredCandidates)
-                                                      // detailedCandidatesFromSourceもスコア順に並んでいる前提。
-                                                      // もしcandidatesForAIがスコア順でない場合は、
-                                                      // scoredCandidates[0] のIDを持つものを detailedCandidatesFromSourceから見つける必要がある。
-                                                      // ここでは簡易的にdetailedCandidatesFromSourceの最初のものを利用
+        const fallbackCandidate = candidatesForAI[0]; 
         
         if (fallbackCandidate) {
             const fallbackAnalysisInput: AnalyzeRestaurantReviewsInput = {
@@ -312,10 +299,6 @@ export async function getRestaurantSuggestion(
         }
     }
     
-    if (!topAnalyses || topAnalyses.length === 0) { // フォールバック後も0件の場合はエラー
-        console.warn("AI final selection (and fallback) resulted in no recommendations.");
-        return { error: "AIによる最終候補の選定に失敗しました。" };
-    }
     console.log(`AI selected/fallbacked to ${topAnalyses.length} final recommendations.`);
 
 

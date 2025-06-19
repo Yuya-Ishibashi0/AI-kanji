@@ -39,13 +39,16 @@ type CandidateForAI = z.infer<typeof CandidateForAISchema>;
 
 const SelectAndAnalyzeInputSchema = z.object({
   candidates: z.array(CandidateForAISchema).describe("整形されたレストラン候補情報の配列（レビューテキスト要約、タイプ、価格レベルを含む）"),
-  criteria: RestaurantCriteriaStringDateSchema.describe("ユーザーが入力した希望条件、個室希望、カスタムプロンプトも含む"),
+  criteria: RestaurantCriteriaStringDateSchema.extend({
+    purposeOfUse: z.string().describe("The purpose of the gathering, e.g., farewell party, welcome party."),
+  }).describe("ユーザーが入力した希望条件、個室希望、利用目的、カスタムプロンプトも含む"),
 });
 
 
 const LLMSelectionOutputSchema = z.array(SingleLLMSuggestionSchema).max(3).describe("選定されたレストラン（最大3件）とその推薦理由、Place IDのリスト。");
 
-const defaultPersona = "あなたは、会社の重要な【送別会・歓迎会】を成功させる責任を持つ、経験豊富な幹事です。";
+const newDefaultPersona = `あなたは、企業の重要な会合を数多く成功させてきた、極めて優秀で経験豊富な幹事です。あなたの使命は、単にレストランの情報を要約することではありません。提示された全ての情報源を駆使し、会の目的や参加者の背景を深く理解した上で、潜在的なリスクを洗い出し、成功を確信できる最高の店を推薦することです。あなたの分析と提案が、会の成否を左右します。`;
+
 const defaultEvaluationPriorities = `
 1.  **場の雰囲気とプライベート感**: スピーチや挨拶が問題なくできるか（特にユーザーが個室を希望している場合は個室の有無・質、店全体の静けさ）。
 2.  **サービスの質**: 団体客への対応に慣れているか、ドリンク提供速度、スタッフの配慮。
@@ -60,10 +63,11 @@ export const selectAndAnalyzeBestRestaurants = ai.defineFlow(
     outputSchema: FinalOutputSchema,
   },
   async (input) => {
-    const persona = input.criteria.customPromptPersona || defaultPersona;
+    // Use the new default persona if customPromptPersona is not provided (e.g., in production)
+    const persona = input.criteria.customPromptPersona || newDefaultPersona;
+    // Use default priorities if customPromptPriorities is not provided
     const evaluationPriorities = input.criteria.customPromptPriorities || defaultEvaluationPriorities;
     
-    // プロンプトに渡す候補情報を調整（タイプや価格帯も入れることを検討）
     const candidatesForPrompt = input.candidates.map(c => ({ 
         id: c.id, 
         name: c.name, 
@@ -79,6 +83,7 @@ ${persona}
 以下のユーザー希望条件とレストラン候補リストを注意深く分析してください。候補リストには、評価点、レビュー数、店舗タイプ、価格帯、レビューの冒頭部分が含まれています。
 
 # ユーザー希望条件
+利用目的: ${input.criteria.purposeOfUse}
 料理: ${input.criteria.cuisine}
 場所: ${input.criteria.location}
 予算: ${input.criteria.budget}
@@ -89,13 +94,13 @@ ${persona}
 ${JSON.stringify(candidatesForPrompt, null, 2)}
 
 # あなたのタスク
-1.  **レストランの選定**: 候補リストの中から、送別会・歓迎会に最もふさわしいレストランを、下記の【評価の優先順位】に従って【上位3件まで】選んでください。
+1.  **レストランの選定**: 「利用目的: ${input.criteria.purposeOfUse}」という目的を最優先に考慮し、候補リストの中から送別会・歓迎会等、その目的に最もふさわしいレストランを、下記の【評価の優先順位】に従って【上位3件まで】選んでください。
     *   **評価の優先順位 (高い順):**
 ${evaluationPriorities}
 2.  **出力JSONの生成**: 選んだ各レストランについて、以下の情報を含むJSONオブジェクトを生成し、それらを配列にまとめてください。
     *   \`placeId\`: 選定したレストランの **ID (id プロパティ)** を候補リストから正確に含めてください。
     *   \`restaurantName\`: 選定したレストランの**名前 (name プロパティ)** を候補リストから正確に含めてください。
-    *   \`recommendationRationale\`: そのレストランがなぜ送別会・歓迎会におすすめなのか、上記の評価基準とユーザーの希望条件を考慮して具体的な推薦文（日本語）を作成してください。
+    *   \`recommendationRationale\`: そのレストランがなぜ「利用目的: ${input.criteria.purposeOfUse}」に、そして他のユーザー希望条件に照らしておすすめなのか、上記の評価基準を考慮して具体的な推薦文（日本語）を作成してください。
 
 # 出力形式
 必ず指示されたJSONスキーマ（LLMSelectionOutputSchema の SingleLLMSuggestionSchema 部分）に従い、【最大3件分のオブジェクトを持つ配列】として出力してください。
@@ -157,3 +162,4 @@ ${evaluationPriorities}
     return finalRecommendations;
   }
 );
+
