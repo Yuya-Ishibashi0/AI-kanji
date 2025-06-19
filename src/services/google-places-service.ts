@@ -15,19 +15,21 @@ export interface RestaurantDetails {
   userRatingsTotal?: number;
   reviewsText?: string;
   photoUrl?: string;
+  websiteUri?: string;
+  googleMapsUri?: string;
 }
 
 export interface RestaurantCandidate {
     id: string;
     name: string;
-    reviewSummary?: string; // Changed from reviewsText for clarity, was reviewSummary from API
+    reviewSummary?: string;
 }
 
 interface TextSearchApiResponse {
   places: {
     id: string;
     displayName?: { text: string };
-    reviewSummary?: { text: string }; // This is the field from Google's API
+    reviewSummary?: { text: string };
   }[];
 }
 
@@ -39,6 +41,10 @@ interface PlaceDetailsApiResponse {
     userRatingCount?: number;
     reviews?: { text?: { text: string } }[];
     photos?: { name: string }[];
+    websiteUri?: string;
+    // googleMapsUri is not directly available, we'll use formattedAddress or adrFormatAddress
+    // For simplicity, we'll generate it from formattedAddress
+    // location?: { latitude: number; longitude: number }; // if more precise map linking is needed
 }
 
 // --- 関数 ---
@@ -49,7 +55,7 @@ export async function textSearchNew(criteria: RestaurantCriteria): Promise<Resta
 
   let query = `${criteria.cuisine} in ${criteria.location}`;
   if (criteria.privateRoomRequested) {
-    query += " 個室"; // Append "個室" (private room) if requested
+    query += " 個室";
   }
 
   const response = await fetch(url, {
@@ -57,12 +63,12 @@ export async function textSearchNew(criteria: RestaurantCriteria): Promise<Resta
     headers: {
       'Content-Type': 'application/json',
       'X-Goog-Api-Key': GOOGLE_PLACES_API_KEY,
-      'X-Goog-FieldMask': 'places.id,places.displayName,places.reviewSummary', // Use reviewSummary
+      'X-Goog-FieldMask': 'places.id,places.displayName,places.reviewSummary',
     },
     body: JSON.stringify({
       textQuery: query,
       languageCode: 'ja',
-      maxResultCount: 10, // Keep max results at 10
+      maxResultCount: 10,
     }),
   });
 
@@ -73,8 +79,7 @@ export async function textSearchNew(criteria: RestaurantCriteria): Promise<Resta
   return data.places.map(place => ({
     id: place.id,
     name: place.displayName?.text || '名前不明',
-    // Pass the reviewSummary from Google directly. It's a short summary.
-    reviewSummary: place.reviewSummary?.text, 
+    reviewSummary: place.reviewSummary?.text,
   }));
 }
 
@@ -82,7 +87,7 @@ export async function getRestaurantDetails(placeId: string): Promise<Omit<Restau
   const url = `https://places.googleapis.com/v1/places/${placeId}`;
   if (!GOOGLE_PLACES_API_KEY) throw new Error('Google Places API key is not configured.');
   
-  const fieldMask = 'id,displayName,formattedAddress,rating,userRatingCount,reviews';
+  const fieldMask = 'id,displayName,formattedAddress,rating,userRatingCount,reviews,websiteUri';
 
   try {
     const response = await fetch(url, {
@@ -101,6 +106,11 @@ export async function getRestaurantDetails(placeId: string): Promise<Omit<Restau
       ? place.reviews.slice(0, 5).map(r => r.text?.text).filter(Boolean).join('\n\n---\n\n')
       : 'レビュー情報なし';
 
+    let googleMapsUri;
+    if (place.formattedAddress) {
+        googleMapsUri = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.formattedAddress)}`;
+    }
+
     return {
       id: place.id,
       name: place.displayName?.text || '名前不明',
@@ -108,6 +118,8 @@ export async function getRestaurantDetails(placeId: string): Promise<Omit<Restau
       rating: place.rating,
       userRatingsTotal: place.userRatingCount,
       reviewsText: reviewsText,
+      websiteUri: place.websiteUri,
+      googleMapsUri: googleMapsUri,
     };
   } catch (error) {
     console.error(`Error in getRestaurantDetails for placeId ${placeId}:`, error);

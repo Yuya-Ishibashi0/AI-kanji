@@ -8,6 +8,8 @@ export const RestaurantCriteriaSchema = z.object({
   cuisine: z.string().min(1, "料理の種類を入力してください。"),
   location: z.string().min(1, "場所を入力してください。"),
   privateRoomRequested: z.boolean().optional().describe("Whether the user requested a private room."),
+  customPromptPersona: z.string().optional().describe("ユーザー指定のAIペルソナ記述"),
+  customPromptPriorities: z.string().optional().describe("ユーザー指定のAI評価優先順位記述"),
 });
 
 export type RestaurantCriteria = z.infer<typeof RestaurantCriteriaSchema>;
@@ -51,3 +53,4 @@ export const SuggestRestaurantsOutputSchema = z.object({
   recommendationRationale: z.string().describe('分析されたレビューと基準に基づいてレストランをおすすめする理由の詳細な説明（日本語で記述）。'),
 });
 export type SuggestRestaurantsOutput = z.infer<typeof SuggestRestaurantsOutputSchema>;
+

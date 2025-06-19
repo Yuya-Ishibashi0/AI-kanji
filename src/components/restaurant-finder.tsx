@@ -2,7 +2,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CalendarIcon, ChefHat, Clock, DollarSign, Loader2, MapPin, Search, Wand2, DoorOpen } from "lucide-react";
+import { CalendarIcon, ChefHat, Clock, DollarSign, Loader2, MapPin, Search, Wand2, DoorOpen, MessageSquare, Edit3 } from "lucide-react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
@@ -14,6 +14,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -35,12 +36,19 @@ const budgetOptions = [
   "8,000円～10,000円", "10,000円～15,000円", "15,000円以上",
 ];
 
+// RestaurantCriteriaBaseSchema already includes customPromptPersona and customPromptPriorities from schemas.ts
 const RestaurantCriteriaFormSchema = RestaurantCriteriaBaseSchema.extend({
   date: z.date({ required_error: "日付を選択してください。" }).nullable().optional(),
   privateRoomRequested: z.boolean().optional(),
 });
 type RestaurantCriteriaFormType = z.infer<typeof RestaurantCriteriaFormSchema>;
 
+const defaultPersonaPrompt = `あなたは、会社の重要な【送別会・歓迎会】を成功させる責任を持つ、経験豊富な幹事です。`;
+const defaultPrioritiesPrompt = `1.  **場の雰囲気とプライベート感**: スピーチや挨拶が問題なくできるか（特にユーザーが個室を希望している場合は個室の有無・質、店全体の静けさ）。
+2.  **サービスの質**: 団体客への対応に慣れているか、ドリンク提供速度、スタッフの配慮。
+3.  **席の配置と柔軟性**: 全員が一体感を持てる席か、参加人数の変更に対応できそうか。
+4.  **料理とコストパフォーマンス**: 予算内で参加者満足度の高いコースや食事が提供されているか。
+5.  その他ユーザーの希望条件（料理ジャンル、場所など）との合致度。`;
 
 export default function RestaurantFinder() {
   const [isLoading, setIsLoading] = useState(false);
@@ -57,6 +65,8 @@ export default function RestaurantFinder() {
       cuisine: "",
       location: "",
       privateRoomRequested: false,
+      customPromptPersona: defaultPersonaPrompt,
+      customPromptPriorities: defaultPrioritiesPrompt,
     },
   });
 
@@ -90,6 +100,8 @@ export default function RestaurantFinder() {
       cuisine: data.cuisine || "",
       location: data.location || "",
       privateRoomRequested: data.privateRoomRequested ?? false,
+      customPromptPersona: data.customPromptPersona,
+      customPromptPriorities: data.customPromptPriorities,
     };
     
     const result = await getRestaurantSuggestion(criteriaForAction);
@@ -99,7 +111,9 @@ export default function RestaurantFinder() {
         ...rec,
         criteria: {
           ...rec.criteria,
-          date: new Date(rec.criteria.date), 
+          // Date object is already in rec.criteria from the server if it needs to be a Date object
+          // If criteria.date from server is string, then parse it:
+          date: typeof rec.criteria.date === 'string' ? new Date(rec.criteria.date) : rec.criteria.date,
         }
       }));
       setRecommendations(recommendationsWithDateObjects);
@@ -270,6 +284,42 @@ export default function RestaurantFinder() {
                   </FormItem>
                 )}
               />
+
+              <FormField
+                control={form.control}
+                name="customPromptPersona"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center"><MessageSquare className="mr-2 h-4 w-4" />AIへの指示 (ペルソナ)</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="AIの役割や性格付けを入力..."
+                        className="resize-y min-h-[100px]"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="customPromptPriorities"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center"><Edit3 className="mr-2 h-4 w-4" />AIへの指示 (評価の優先順位)</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="AIがレストランを選ぶ際の評価基準や優先順位を入力..."
+                        className="resize-y min-h-[150px]"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               
               <Button type="submit" disabled={isLoading || !form.formState.isValid || !minCalendarDate} className="w-full text-base py-6">
                 {isLoading ? (
@@ -319,10 +369,20 @@ export default function RestaurantFinder() {
               suggestion={rec.suggestion} 
               analysis={rec.analysis}
               photoUrl={rec.photoUrl}
+              websiteUri={rec.websiteUri}
+              googleMapsUri={rec.googleMapsUri}
             />
           ))}
           {recommendations.length > 0 && recommendations[0] && recommendations[0].criteria && (
-            <PreferenceDisplayCard criteria={recommendations[0].criteria} />
+             <PreferenceDisplayCard 
+                criteria={{
+                    ...recommendations[0].criteria,
+                    // Ensure date is a Date object for PreferenceDisplayCard
+                    date: typeof recommendations[0].criteria.date === 'string' 
+                            ? new Date(recommendations[0].criteria.date) 
+                            : recommendations[0].criteria.date
+                }} 
+            />
           )}
            <Button variant="outline" onClick={() => setRecommendations(null)} className="w-full">
             別の条件で検索する

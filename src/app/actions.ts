@@ -4,25 +4,28 @@
 import { FinalOutput, selectAndAnalyzeBestRestaurants } from "@/ai/flows/select-and-analyze";
 import { filterRestaurantsForGroup } from "@/ai/flows/filter-restaurants";
 import { type RestaurantCriteria } from "@/lib/schemas";
-import { getRestaurantDetails, getRestaurantPhotoUrl, textSearchNew, RestaurantCandidate, RestaurantDetails } from "@/services/google-places-service";
+import { getRestaurantDetails, getRestaurantPhotoUrl, RestaurantCandidate, RestaurantDetails } from "@/services/google-places-service";
 import { format } from "date-fns";
 import { adminDb } from "@/lib/firebase-admin";
 import { Timestamp } from "firebase-admin/firestore";
 
 // フロントエンドに渡す、写真URLまで含んだ最終的な型
 export type RecommendationResult = FinalOutput[number] & {
-    criteria: RestaurantCriteria;
+    criteria: RestaurantCriteria; // Includes customPromptPersona and customPromptPriorities
     photoUrl?: string;
     placeId: string;
+    websiteUri?: string;
+    googleMapsUri?: string;
 };
 
 /**
  * フロントエンドから呼び出される、Firestoreキャッシュロジックを実装したサーバーアクション
  */
 export async function getRestaurantSuggestion(
-  criteria: RestaurantCriteria
+  criteria: RestaurantCriteria // Now includes customPromptPersona and customPromptPriorities
 ): Promise<{ data?: RecommendationResult[]; error?: string }> {
   try {
+    // criteria already contains custom prompts if provided by the user
     const criteriaForAI = {
         ...criteria,
         date: format(new Date(criteria.date), 'yyyy-MM-dd')
@@ -55,19 +58,20 @@ export async function getRestaurantSuggestion(
       const docSnap = await docRef.get();
 
       if (docSnap.exists) {
-        // 【キャッシュヒット】
-        const cachedData = docSnap.data() as RestaurantDetails; // Assuming data is RestaurantDetails
-        console.log(`[CACHE HIT] Firestore: Fetched '${cachedData.name}' (ID: ${id}) from shinjuku-places.`);
-        return { ...cachedData, updatedAt: (cachedData.updatedAt as unknown as Timestamp).toDate() } as RestaurantDetails;
+        const cachedData = docSnap.data();
+        console.log(`[CACHE HIT] Firestore: Fetched '${cachedData?.name}' (ID: ${id}) from shinjuku-places.`);
+        // Ensure all fields including new ones are correctly typed and handled
+        return { 
+            ...(cachedData as RestaurantDetails), // Cast to ensure all fields are expected
+            updatedAt: (cachedData?.updatedAt as unknown as Timestamp)?.toDate() 
+        } as RestaurantDetails;
 
       } else {
-        // 【キャッシュミス】
         console.log(`[CACHE MISS] Firestore: No data for ID: ${id} in shinjuku-places. Fetching from API...`);
-        const details = await getRestaurantDetails(id);
+        const details = await getRestaurantDetails(id); // This now returns websiteUri and googleMapsUri
         if (details) {
-          // Firestoreに保存（キャッシュ）する
           await docRef.set({
-            ...details,
+            ...details, // All fields from getRestaurantDetails, including new ones
             updatedAt: Timestamp.now(), 
           });
           console.log(`[CACHE SAVE] Firestore: Saved '${details.name}' (ID: ${id}) to shinjuku-places.`);
@@ -76,7 +80,8 @@ export async function getRestaurantSuggestion(
       }
     });
 
-    const detailedCandidates = (await Promise.all(detailPromises)).filter((c): c is NonNullable<typeof c> => c !== null);
+    const detailedCandidates = (await Promise.all(detailPromises)).filter((c): c is RestaurantDetails => c !== null);
+
 
     if (detailedCandidates.length === 0) {
       console.warn("Failed to get detailed information for any candidate.");
@@ -86,9 +91,10 @@ export async function getRestaurantSuggestion(
 
     // 4. AIによる最終選定と分析
     console.log("Step 4: Running final AI analysis on detailed candidates...");
+    // Pass the full criteria (including custom prompts) to the AI flow
     const top3Analyses = await selectAndAnalyzeBestRestaurants({
       candidates: detailedCandidates,
-      criteria: criteriaForAI,
+      criteria: criteriaForAI, // criteriaForAI has date formatted and includes custom prompts
     });
 
     if (!top3Analyses || top3Analyses.length === 0) {
@@ -111,9 +117,11 @@ export async function getRestaurantSuggestion(
 
             return {
                 ...result,
-                placeId: placeId || '', // Ensure placeId is always a string
-                criteria, // Original criteria (with Date object) is passed back
+                placeId: placeId || '', 
+                criteria, // Original criteria (with Date object and custom prompts) is passed back
                 photoUrl,
+                websiteUri: correspondingCandidate?.websiteUri,
+                googleMapsUri: correspondingCandidate?.googleMapsUri,
             };
         })
     );

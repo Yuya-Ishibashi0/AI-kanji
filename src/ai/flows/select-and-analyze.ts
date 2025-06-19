@@ -6,7 +6,8 @@ import {
   RestaurantCriteriaSchema as RestaurantCriteriaStringDateSchema, 
   AnalyzeRestaurantReviewsOutputSchema, 
   SuggestRestaurantsOutputSchema,
-  type AnalyzeRestaurantReviewsOutput
+  type AnalyzeRestaurantReviewsOutput,
+  type RestaurantCriteria // Import RestaurantCriteria for input typing
 } from '@/lib/schemas';
 import { analyzeRestaurantReviews, type AnalyzeRestaurantReviewsInput } from './analyze-restaurant-reviews';
 
@@ -25,11 +26,14 @@ const CandidateSchema = z.object({
   address: z.string().optional().describe("住所"),
   rating: z.number().optional().describe("評価点"),
   userRatingsTotal: z.number().optional().describe("評価数"),
+  websiteUri: z.string().optional().describe("レストランのウェブサイトURI"),
+  googleMapsUri: z.string().optional().describe("レストランのGoogle Maps URI"),
 });
 
+// Input schema now directly uses RestaurantCriteria which includes custom prompts
 const SelectAndAnalyzeInputSchema = z.object({
   candidates: z.array(CandidateSchema).describe("Place Details APIから取得したレストラン詳細情報の配列（レビュー本文を含む）"),
-  criteria: RestaurantCriteriaStringDateSchema.describe("ユーザーが入力した希望条件、個室希望も含む"),
+  criteria: RestaurantCriteriaStringDateSchema.describe("ユーザーが入力した希望条件、個室希望、カスタムプロンプトも含む"),
 });
 
 const LLMSelectionItemSchema = z.object({
@@ -38,14 +42,26 @@ const LLMSelectionItemSchema = z.object({
 });
 const LLMSelectionOutputSchema = z.array(LLMSelectionItemSchema).max(3).describe("選定されたレストラン（最大3件）とその推薦理由のリスト。");
 
+// Default prompts
+const defaultPersona = "あなたは、会社の重要な【送別会・歓迎会】を成功させる責任を持つ、経験豊富な幹事です。";
+const defaultEvaluationPriorities = `
+1.  **場の雰囲気とプライベート感**: スピーチや挨拶が問題なくできるか（特にユーザーが個室を希望している場合は個室の有無・質、店全体の静けさ）。
+2.  **サービスの質**: 団体客への対応に慣れているか、ドリンク提供速度、スタッフの配慮。
+3.  **席の配置と柔軟性**: 全員が一体感を持てる席か、参加人数の変更に対応できそうか。
+4.  **料理とコストパフォーマンス**: 予算内で参加者満足度の高いコースや食事が提供されているか。
+5.  その他ユーザーの希望条件（料理ジャンル、場所など）との合致度。`;
+
 export const selectAndAnalyzeBestRestaurants = ai.defineFlow(
   {
-    name: 'selectAndAnalyzeFarewellPartyRestaurantsFlow', // New name
+    name: 'selectAndAnalyzeFarewellPartyRestaurantsFlow', 
     inputSchema: SelectAndAnalyzeInputSchema,
     outputSchema: FinalOutputSchema,
   },
   async (input) => {
-    const persona = "あなたは、会社の重要な【送別会・歓迎会】を成功させる責任を持つ、経験豊富な幹事です。";
+    // Use custom prompts from criteria if available, otherwise use defaults
+    const persona = input.criteria.customPromptPersona || defaultPersona;
+    const evaluationPriorities = input.criteria.customPromptPriorities || defaultEvaluationPriorities;
+    
     const selectionPrompt = `
 ${persona}
 以下のユーザー希望条件とレストラン候補リストを注意深く分析してください。
@@ -63,11 +79,7 @@ ${JSON.stringify(input.candidates.map(c => ({ id: c.id, name: c.name, rating: c.
 # あなたのタスク
 1.  **レストランの選定**: 候補リストの中から、送別会・歓迎会に最もふさわしいレストランを、下記の【評価の優先順位】に従って【上位3件まで】選んでください。
     *   **評価の優先順位 (高い順):**
-        1.  **場の雰囲気とプライベート感**: スピーチや挨拶が問題なくできるか（特にユーザーが個室を希望している場合は個室の有無・質、店全体の静けさ）。
-        2.  **サービスの質**: 団体客への対応に慣れているか、ドリンク提供速度、スタッフの配慮。
-        3.  **席の配置と柔軟性**: 全員が一体感を持てる席か、参加人数の変更に対応できそうか。
-        4.  **料理とコストパフォーマンス**: 予算内で参加者満足度の高いコースや食事が提供されているか。
-        5.  その他ユーザーの希望条件（料理ジャンル、場所など）との合致度。
+${evaluationPriorities}
 2.  **出力JSONの生成**: 選んだ各レストランについて、以下の情報を含むJSONオブジェクトを生成し、それらを配列にまとめてください。
     *   \`placeId\`: 選定したレストランの **ID (id プロパティ)** を候補リストから正確に含めてください。
     *   \`suggestion\`:
@@ -124,7 +136,7 @@ ${JSON.stringify(input.candidates.map(c => ({ id: c.id, name: c.name, rating: c.
                 ambiance: "情報なし",
             },
             groupDiningExperience: "情報なし",
-            kanjiChecklist: { // Ensure fallback includes new checklist
+            kanjiChecklist: { 
                 privateRoomQuality: "情報なし",
                 noiseLevel: "情報なし",
                 groupService: "情報なし",

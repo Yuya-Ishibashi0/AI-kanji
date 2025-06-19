@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { BadgeCheck, CalendarClock, MessageSquareQuote, Sparkles, Star, ThumbsDown, ThumbsUp, Users } from "lucide-react";
+import { BadgeCheck, CalendarClock, MessageSquareQuote, Sparkles, Star, ThumbsDown, ThumbsUp, Users, LinkIcon, MapIcon } from "lucide-react";
 import Image from 'next/image';
 import { useState } from "react";
 
@@ -15,9 +15,11 @@ interface RestaurantInfoCardProps {
   suggestion: SuggestRestaurantsOutput;
   analysis: AnalyzeRestaurantReviewsOutput;
   photoUrl?: string;
+  websiteUri?: string;
+  googleMapsUri?: string;
 }
 
-export default function RestaurantInfoCard({ suggestion, analysis, photoUrl }: RestaurantInfoCardProps) {
+export default function RestaurantInfoCard({ suggestion, analysis, photoUrl, websiteUri, googleMapsUri }: RestaurantInfoCardProps) {
   const { toast } = useToast();
   const [availabilityStatus, setAvailabilityStatus] = useState<string | null>(null);
   const [bookingStatus, setBookingStatus] = useState<string | null>(null);
@@ -101,6 +103,27 @@ export default function RestaurantInfoCard({ suggestion, analysis, photoUrl }: R
             />
           )}
         </div>
+
+        {(websiteUri || googleMapsUri) && (
+          <div className="flex flex-wrap gap-2 mt-2">
+            {websiteUri && (
+              <Button variant="outline" size="sm" asChild>
+                <a href={websiteUri} target="_blank" rel="noopener noreferrer">
+                  <LinkIcon className="mr-2 h-4 w-4" />
+                  公式サイト
+                </a>
+              </Button>
+            )}
+            {googleMapsUri && (
+              <Button variant="outline" size="sm" asChild>
+                <a href={googleMapsUri} target="_blank" rel="noopener noreferrer">
+                  <MapIcon className="mr-2 h-4 w-4" />
+                  Google Maps
+                </a>
+              </Button>
+            )}
+          </div>
+        )}
 
         <div>
           <h3 className="text-lg font-semibold mb-2 flex items-center font-headline">
