@@ -1251,3 +1251,15 @@ Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allow
 [firebase-admin.ts] Firebase admin app already initialized. Reusing existing instance.
 [firebase-admin.ts] Module finished loading.
  GET / [32m200[39m in 2132ms
+[firebase-admin.ts] Module starting to load. Timestamp: 2025-06-19T19:25:47.336Z
+[firebase-admin.ts] NODE_ENV: development
+[firebase-admin.ts] --- Initial Firebase Admin SDK Env Var Check (Existence & Length) ---
+[firebase-admin.ts] FIREBASE_PROJECT_ID: EXISTS (length: 17)
+[firebase-admin.ts] FIREBASE_CLIENT_EMAIL: EXISTS (length: 65)
+[firebase-admin.ts] FIREBASE_PRIVATE_KEY: EXISTS (length: 1704)
+[firebase-admin.ts] GOOGLE_PLACES_API_KEY: EXISTS
+[firebase-admin.ts] GEMINI_API_KEY: EXISTS
+[firebase-admin.ts] --- End Initial Firebase Admin SDK Env Var Check ---
+[firebase-admin.ts] Firebase admin app already initialized. Reusing existing instance.
+[firebase-admin.ts] Module finished loading.
+ GET / [32m200[39m in 4158ms

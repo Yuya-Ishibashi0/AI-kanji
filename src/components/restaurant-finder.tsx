@@ -36,7 +36,6 @@ const budgetOptions = [
   "8,000円～10,000円", "10,000円～15,000円", "15,000円以上",
 ];
 
-// RestaurantCriteriaBaseSchema already includes customPromptPersona and customPromptPriorities from schemas.ts
 const RestaurantCriteriaFormSchema = RestaurantCriteriaBaseSchema.extend({
   date: z.date({ required_error: "日付を選択してください。" }).nullable().optional(),
   privateRoomRequested: z.boolean().optional(),
@@ -111,8 +110,6 @@ export default function RestaurantFinder() {
         ...rec,
         criteria: {
           ...rec.criteria,
-          // Date object is already in rec.criteria from the server if it needs to be a Date object
-          // If criteria.date from server is string, then parse it:
           date: typeof rec.criteria.date === 'string' ? new Date(rec.criteria.date) : rec.criteria.date,
         }
       }));
@@ -366,18 +363,25 @@ export default function RestaurantFinder() {
           {recommendations.map((rec) => (
             <RestaurantInfoCard 
               key={rec.placeId} 
-              suggestion={rec.suggestion} 
+              suggestion={{
+                restaurantName: rec.suggestion.restaurantName,
+                recommendationRationale: rec.suggestion.recommendationRationale,
+              }}
               analysis={rec.analysis}
               photoUrl={rec.photoUrl}
               websiteUri={rec.websiteUri}
               googleMapsUri={rec.googleMapsUri}
+              address={rec.address}
+              rating={rec.rating}
+              userRatingsTotal={rec.userRatingsTotal}
+              types={rec.types}
+              priceLevel={rec.priceLevel}
             />
           ))}
           {recommendations.length > 0 && recommendations[0] && recommendations[0].criteria && (
              <PreferenceDisplayCard 
                 criteria={{
                     ...recommendations[0].criteria,
-                    // Ensure date is a Date object for PreferenceDisplayCard
                     date: typeof recommendations[0].criteria.date === 'string' 
                             ? new Date(recommendations[0].criteria.date) 
                             : recommendations[0].criteria.date
@@ -392,3 +396,5 @@ export default function RestaurantFinder() {
     </div>
   );
 }
+
+    

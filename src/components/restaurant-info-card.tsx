@@ -7,19 +7,55 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { BadgeCheck, CalendarClock, MessageSquareQuote, Sparkles, Star, ThumbsDown, ThumbsUp, Users, LinkIcon, MapIcon } from "lucide-react";
+import { BadgeCheck, CalendarClock, MessageSquareQuote, Sparkles, Star, ThumbsDown, ThumbsUp, Users, LinkIcon, MapIcon, Home, Tag, TrendingUp, CircleDollarSign } from "lucide-react";
 import Image from 'next/image';
 import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
 
 interface RestaurantInfoCardProps {
-  suggestion: SuggestRestaurantsOutput;
+  suggestion: SuggestRestaurantsOutput; // Should only contain restaurantName and recommendationRationale
   analysis: AnalyzeRestaurantReviewsOutput;
   photoUrl?: string;
   websiteUri?: string;
   googleMapsUri?: string;
+  address?: string;
+  rating?: number;
+  userRatingsTotal?: number;
+  types?: string[];
+  priceLevel?: string;
 }
 
-export default function RestaurantInfoCard({ suggestion, analysis, photoUrl, websiteUri, googleMapsUri }: RestaurantInfoCardProps) {
+// Helper function to convert price level to a more readable format
+const formatPriceLevel = (priceLevel?: string): string => {
+  if (!priceLevel) return "情報なし";
+  switch (priceLevel) {
+    case "PRICE_LEVEL_FREE":
+      return "無料";
+    case "PRICE_LEVEL_INEXPENSIVE":
+      return "¥";
+    case "PRICE_LEVEL_MODERATE":
+      return "¥¥";
+    case "PRICE_LEVEL_EXPENSIVE":
+      return "¥¥¥";
+    case "PRICE_LEVEL_VERY_EXPENSIVE":
+      return "¥¥¥¥";
+    default:
+      return "情報なし";
+  }
+};
+
+export default function RestaurantInfoCard({ 
+  suggestion, 
+  analysis, 
+  photoUrl, 
+  websiteUri, 
+  googleMapsUri,
+  address,
+  rating,
+  userRatingsTotal,
+  types,
+  priceLevel 
+}: RestaurantInfoCardProps) {
   const { toast } = useToast();
   const [availabilityStatus, setAvailabilityStatus] = useState<string | null>(null);
   const [bookingStatus, setBookingStatus] = useState<string | null>(null);
@@ -104,8 +140,40 @@ export default function RestaurantInfoCard({ suggestion, analysis, photoUrl, web
           )}
         </div>
 
+        <div className="space-y-2 text-sm">
+          {address && (
+            <div className="flex items-center">
+              <Home className="mr-2 h-4 w-4 text-muted-foreground" />
+              <span>{address}</span>
+            </div>
+          )}
+          <div className="flex flex-wrap gap-x-4 gap-y-1">
+            {rating !== undefined && userRatingsTotal !== undefined && (
+              <div className="flex items-center">
+                <TrendingUp className="mr-1.5 h-4 w-4 text-muted-foreground" />
+                <span>評価: {rating.toFixed(1)} ({userRatingsTotal}件)</span>
+              </div>
+            )}
+            {priceLevel && (
+              <div className="flex items-center">
+                <CircleDollarSign className="mr-1.5 h-4 w-4 text-muted-foreground" />
+                <span>価格帯: {formatPriceLevel(priceLevel)}</span>
+              </div>
+            )}
+          </div>
+          {types && types.length > 0 && (
+            <div className="flex items-center flex-wrap gap-1 pt-1">
+              <Tag className="mr-1.5 h-4 w-4 text-muted-foreground" />
+              {types.map((type) => (
+                <Badge key={type} variant="secondary" className="text-xs">{type}</Badge>
+              ))}
+            </div>
+          )}
+        </div>
+
+
         {(websiteUri || googleMapsUri) && (
-          <div className="flex flex-wrap gap-2 mt-2">
+          <div className="flex flex-wrap gap-2">
             {websiteUri && (
               <Button variant="outline" size="sm" asChild>
                 <a href={websiteUri} target="_blank" rel="noopener noreferrer">
@@ -124,6 +192,8 @@ export default function RestaurantInfoCard({ suggestion, analysis, photoUrl, web
             )}
           </div>
         )}
+
+        <Separator />
 
         <div>
           <h3 className="text-lg font-semibold mb-2 flex items-center font-headline">
@@ -152,7 +222,7 @@ export default function RestaurantInfoCard({ suggestion, analysis, photoUrl, web
                 </dl>
             </div>
         )}
-
+        
         <div>
           <h3 className="text-lg font-semibold mb-2 mt-4 flex items-center font-headline">
             <Sparkles className="mr-2 h-5 w-5 text-accent" />
@@ -191,3 +261,5 @@ export default function RestaurantInfoCard({ suggestion, analysis, photoUrl, web
     </Card>
   );
 }
+
+    
