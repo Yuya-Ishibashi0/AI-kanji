@@ -1,53 +1,60 @@
 # Firebase App Hosting バックエンド設定
 # https://firebase.google.com/docs/app-hosting/configure
 
-# Secrets from Google Cloud Secret Manager
-# これらのシークレットは、下記で指定した名前と一致するよう、事前にSecret Managerで作成しておく必要があります。
-secretEnvironmentVariables:
-  - key: FIREBASE_PROJECT_ID
-    secret: FIREBASE_PROJECT_ID
-    version: latest
-  - key: FIREBASE_CLIENT_EMAIL
-    secret: FIREBASE_CLIENT_EMAIL
-    version: latest
-  - key: FIREBASE_PRIVATE_KEY
-    secret: FIREBASE_PRIVATE_KEY
-    version: latest
-  - key: GOOGLE_PLACES_API_KEY
-    secret: GOOGLE_PLACES_API_KEY
-    version: latest
-  - key: GEMINI_API_KEY
-    secret: GEMINI_API_KEY
-    version: latest
-  - key: NEXT_PUBLIC_FIREBASE_API_KEY
-    secret: NEXT_PUBLIC_FIREBASE_API_KEY
-    version: latest
-  - key: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
-    secret: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
-    version: latest
-  - key: NEXT_PUBLIC_FIREBASE_PROJECT_ID
-    secret: NEXT_PUBLIC_FIREBASE_PROJECT_ID
-    version: latest
-  - key: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
-    secret: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
-    version: latest
-  - key: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
-    secret: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
-    version: latest
-  - key: NEXT_PUBLIC_FIREBASE_APP_ID
-    secret: NEXT_PUBLIC_FIREBASE_APP_ID
-    version: latest
-
-# 実行環境の設定
+# Settings for Cloud Run
 runConfig:
   maxInstances: 1
-  # デバッグ用の直接設定する環境変数（Secret Managerを経由しない）
-  environmentVariables:
-    TEST_VAR_DIRECT: "HelloFromApphostingYAML"
-    ANOTHER_TEST_VAR: "ThisIsAlsoATest"
+  # minInstances: 0 # Default, can be omitted
+  # concurrency: 80 # Default, can be omitted
+  # cpu: 0 # Default, can be omitted
+  # memoryMiB: 512 # Default, can be omitted
+
+# Environment variables and secrets defined under a single 'env' key
+# as per the newer documentation structure.
+env:
+  # --- Test Direct Environment Variables ---
+  - variable: TEST_VAR_DIRECT # For testing direct env var setting
+    value: "HelloFromApphostingYAMLUsingEnv"
+    availability: # Explicitly set for clarity, default is BUILD and RUNTIME
+      - BUILD
+      - RUNTIME
+  - variable: ANOTHER_TEST_VAR # Another test direct env var
+    value: "ThisIsAlsoATestUsingEnv"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  # --- Server-side only secrets for Firebase Admin SDK ---
+  - variable: FIREBASE_PROJECT_ID
+    secret: FIREBASE_PROJECT_ID # Secret name in Secret Manager, latest version is implied
+  - variable: FIREBASE_CLIENT_EMAIL
+    secret: FIREBASE_CLIENT_EMAIL # Secret name in Secret Manager
+  - variable: FIREBASE_PRIVATE_KEY
+    secret: FIREBASE_PRIVATE_KEY # Secret name in Secret Manager
+
+  # --- Other server-side API keys ---
+  - variable: GEMINI_API_KEY
+    secret: GEMINI_API_KEY # Secret name in Secret Manager
+  - variable: GOOGLE_PLACES_API_KEY
+    secret: GOOGLE_PLACES_API_KEY # Secret name in Secret Manager
+
+  # --- Public keys for browser (NEXT_PUBLIC_ prefix) ---
+  # These will also be available server-side and at build time.
+  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
+    secret: NEXT_PUBLIC_FIREBASE_API_KEY # Secret name in Secret Manager
+  - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    secret: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN # Secret name in Secret Manager
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    secret: NEXT_PUBLIC_FIREBASE_PROJECT_ID # Secret name in Secret Manager
+  - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+    secret: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET # Secret name in Secret Manager
+  - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+    secret: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID # Secret name in Secret Manager
+  - variable: NEXT_PUBLIC_FIREBASE_APP_ID
+    secret: NEXT_PUBLIC_FIREBASE_APP_ID # Secret name in Secret Manager
 
 # buildConfig:
-#   # ビルド時にのみ利用する非公開の環境変数
-#   # NEXT_PUBLIC_ 変数は secretEnvironmentVariables 経由でもビルド時に利用可能です
+#   # Non-secret build-time environment variables can be defined here
+#   # NEXT_PUBLIC_ variables are also available at build time via the 'env' section if availability includes BUILD
 #   environmentVariables:
-#     NEXT_PUBLIC_ANOTHER_VAR: "build_value"
+#     NEXT_PUBLIC_ANOTHER_BUILD_VAR: "build_value_example"
