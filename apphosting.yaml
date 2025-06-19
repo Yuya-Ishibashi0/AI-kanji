@@ -1,7 +1,56 @@
 # Settings to manage and configure a Firebase App Hosting backend.
 # https://firebase.google.com/docs/app-hosting/configure
 
+# Secrets from Google Cloud Secret Manager
+# These secrets need to be created in Secret Manager first, matching the names specified below.
+# The `key` is the environment variable name your app will use (e.g., process.env.KEY).
+# The `secret` is the name of the secret in Secret Manager.
+# The `version` is typically 'latest'.
+secretEnvironmentVariables:
+  - key: FIREBASE_PROJECT_ID
+    secret: FIREBASE_PROJECT_ID # Secret name in Secret Manager
+    version: latest
+  - key: FIREBASE_CLIENT_EMAIL
+    secret: FIREBASE_CLIENT_EMAIL # Secret name in Secret Manager
+    version: latest
+  - key: FIREBASE_PRIVATE_KEY
+    secret: FIREBASE_PRIVATE_KEY # Secret name in Secret Manager
+    version: latest
+  - key: GOOGLE_PLACES_API_KEY
+    secret: GOOGLE_PLACES_API_KEY # Secret name in Secret Manager
+    version: latest
+  - key: GEMINI_API_KEY
+    secret: GEMINI_API_KEY # Secret name in Secret Manager
+    version: latest
+  - key: NEXT_PUBLIC_FIREBASE_API_KEY
+    secret: NEXT_PUBLIC_FIREBASE_API_KEY # Secret name in Secret Manager
+    version: latest
+  - key: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    secret: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN # Secret name in Secret Manager
+    version: latest
+  - key: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    secret: NEXT_PUBLIC_FIREBASE_PROJECT_ID # Secret name in Secret Manager
+    version: latest
+  - key: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+    secret: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET # Secret name in Secret Manager
+    version: latest
+  - key: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+    secret: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID # Secret name in Secret Manager
+    version: latest
+  - key: NEXT_PUBLIC_FIREBASE_APP_ID
+    secret: NEXT_PUBLIC_FIREBASE_APP_ID # Secret name in Secret Manager
+    version: latest
+
 runConfig:
   # Increase this value if you'd like to automatically spin up
   # more instances in response to increased traffic.
   maxInstances: 1
+  # For non-secret runtime environment variables, you can define them here:
+  # environmentVariables:
+  #   SOME_RUNTIME_VAR: "value"
+
+# buildConfig:
+  # For non-secret build-time environment variables, you can define them here:
+  # (NEXT_PUBLIC_ variables are made available via secretEnvironmentVariables at build time too)
+  # environmentVariables:
+  #   NEXT_PUBLIC_ANOTHER_VAR: "build_value"

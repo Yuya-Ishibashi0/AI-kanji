@@ -79,12 +79,14 @@ sequenceDiagram
 
 ### 環境変数の設定
 
-以下のAPIキーが必須です。プロジェクトのルートに`.env.local`ファイルを作成して保存してください。
+#### ローカル開発環境
+
+ローカルでの開発時には、プロジェクトのルートに`.env.local`ファイルを作成し、以下の環境変数を設定します。このファイルは `.gitignore` によりリポジトリにはコミットされません。
 
 - **Firebase Admin SDK用 (3変数方式):** (`src/lib/firebase-admin.ts` で使用)
     - `FIREBASE_PROJECT_ID`
     - `FIREBASE_CLIENT_EMAIL`
-    - `FIREBASE_PRIVATE_KEY` (秘密鍵の改行は `\n` として文字列内に含めてください)
+    - `FIREBASE_PRIVATE_KEY` (秘密鍵の改行は `\n` として文字列内に含めてください。例: `"-----BEGIN PRIVATE KEY-----\nYOUR_KEY_LINE_1\nYOUR_KEY_LINE_2\n-----END PRIVATE KEY-----\n"`)
 - **Firebase Client SDK用:** (`src/lib/firebase.ts` で使用。これらはブラウザからもアクセスされるため `NEXT_PUBLIC_` が必要です)
     - `NEXT_PUBLIC_FIREBASE_API_KEY`
     - `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
@@ -92,16 +94,35 @@ sequenceDiagram
     - `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`
     - `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`
     - `NEXT_PUBLIC_FIREBASE_APP_ID`
-- **Google Places API用:** (`src/services/google-places-service.ts` で使用。サーバーサイド専用のキーです)
+- **Google Places API用 (サーバーサイド):** (`src/services/google-places-service.ts` で使用)
     - `GOOGLE_PLACES_API_KEY`
-- **Gemini API用:** (サーバーサイドで使用)
+- **Gemini API用 (サーバーサイド):** (Genkitが使用)
     - `GEMINI_API_KEY`
 
-**注意:**
-- `FIREBASE_PRIVATE_KEY` は、サービスアカウントキーJSONファイルから取得した秘密鍵の文字列です。`-----BEGIN PRIVATE KEY-----` で始まり `-----END PRIVATE KEY-----\n` で終わる形式で、その間の改行は `\n` としてください。例: `"-----BEGIN PRIVATE KEY-----\nYOUR_KEY_LINE_1\nYOUR_KEY_LINE_2\n-----END PRIVATE KEY-----\n"`
-- `GOOGLE_PLACES_API_KEY` は、`src/services/google-places-service.ts` でサーバーサイドのAPI呼び出しに使用されます。もし `.env.local` に `NEXT_PUBLIC_PLACES_API_KEY` しか設定していない場合は、`GOOGLE_PLACES_API_KEY` にリネームするか、同じ値を `GOOGLE_PLACES_API_KEY` としても設定してください。
+ローカル開発では、これらの値を`.env.local`に直接記述します。設定後、`npm run dev`で開発サーバを起動すると自動で読み込まれます。
 
-設定後、`npm run dev`で開発サーバを起動すると自動で読み込まれます。
+#### Firebase App Hosting 環境 (本番/プレビュー)
+
+Firebase App Hosting へデプロイする際は、`.env.local` ファイルは使用されません。代わりに、環境変数は **Google Cloud Secret Manager** を介して安全に設定し、`apphosting.yaml` ファイルで参照します。
+
+1.  **Google Cloud Secret Manager にシークレットを作成:**
+    Firebase プロジェクトに関連付けられた Google Cloud プロジェクトの Secret Manager で、以下の名前でシークレットを作成し、それぞれの値を設定します。
+    *   `FIREBASE_PROJECT_ID`
+    *   `FIREBASE_CLIENT_EMAIL`
+    *   `FIREBASE_PRIVATE_KEY` (サービスアカウントキーの秘密鍵。改行も含めてそのままペースト)
+    *   `GOOGLE_PLACES_API_KEY`
+    *   `GEMINI_API_KEY`
+    *   `NEXT_PUBLIC_FIREBASE_API_KEY`
+    *   `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
+    *   `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
+    *   `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`
+    *   `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`
+    *   `NEXT_PUBLIC_FIREBASE_APP_ID`
+
+2.  **`apphosting.yaml` でシークレットを参照:**
+    プロジェクトルートの `apphosting.yaml` ファイルに、上記で作成したシークレットを参照する設定を記述します (詳細は `apphosting.yaml` の `secretEnvironmentVariables` セクションを参照)。これにより、App Hosting のビルド時および実行時に、これらのシークレットの値が環境変数としてアプリケーションに安全に提供されます。
+
+    **注意:** `NEXT_PUBLIC_` で始まる変数は、ビルド時にクライアントサイドのコードに埋め込まれるため、Secret Manager経由で設定する場合でもビルドプロセスからアクセス可能である必要があります。`secretEnvironmentVariables` はビルド環境と実行環境の両方に変数を公開します。
 
 ### 依存関係・開発コマンド
 
