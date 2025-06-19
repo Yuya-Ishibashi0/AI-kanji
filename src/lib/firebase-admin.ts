@@ -17,6 +17,13 @@ if (!admin.apps.length) {
       credential: admin.credential.cert(serviceAccount),
     });
     console.log("Firebase Admin SDK initialized successfully.");
+
+    // Firestoreの設定でundefinedのプロパティを無視するようにする
+    admin.firestore().settings({
+      ignoreUndefinedProperties: true,
+    });
+    console.log("Firestore ignoreUndefinedProperties set to true.");
+
   } catch (error) {
     console.error("Firebase Admin SDK initialization error:", error);
     // 本番環境では、初期化の失敗は致命的なエラーとして扱う
