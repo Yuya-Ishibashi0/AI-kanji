@@ -4,14 +4,14 @@
 import { FinalOutput, selectAndAnalyzeBestRestaurants } from "@/ai/flows/select-and-analyze";
 import { filterRestaurantsForGroup } from "@/ai/flows/filter-restaurants";
 import type { RestaurantCriteria } from "@/lib/schemas";
-import { 
-    getRestaurantDetails, 
-    buildPhotoUrl, 
-    textSearchNew, 
-    type RestaurantCandidate, 
-    type RestaurantDetails as ApiRestaurantDetails, // Type from google-places-service
-    type PlacePhoto, // Import for FirestoreRestaurantDetails
-    type PlaceReview // Import for FirestoreRestaurantDetails
+import {
+    getRestaurantDetails,
+    buildPhotoUrl,
+    textSearchNew, // Added missing import
+    type RestaurantCandidate,
+    type RestaurantDetails as ApiRestaurantDetails,
+    type PlacePhoto,
+    type PlaceReview
 } from "@/services/google-places-service";
 import { format } from "date-fns";
 import { adminDb } from "@/lib/firebase-admin";
@@ -20,23 +20,22 @@ import { Timestamp } from "firebase-admin/firestore";
 // Interface representing the structure of documents in Firestore's "shinjuku-places" collection
 interface FirestoreRestaurantDetails {
     id: string;
-    name: string; // Corresponds to displayName.text from API, mapped to name in ApiRestaurantDetails
+    name: string;
     formattedAddress?: string;
     rating?: number;
     userRatingCount?: number;
-    photos?: PlacePhoto[]; // Array of photo objects
-    reviews?: PlaceReview[]; // Array of review objects
+    photos: PlacePhoto[]; // Ensure this is always an array, even if empty
+    reviews: PlaceReview[];  // Ensure this is always an array, even if empty
     websiteUri?: string;
     googleMapsUri?: string;
-    internationalPhoneNumber?: string; // From API
-    weekdayDescriptions?: string[]; // Flat array of opening hours strings
+    internationalPhoneNumber?: string;
+    weekdayDescriptions?: string[];
 
     // Admin fields
     createdAt: Timestamp;
-    updatedAt: Timestamp; // Or lastSyncAt if preferred
+    updatedAt: Timestamp;
     isActive: boolean;
-    category: string; 
-    // subArea?: string; // Not currently populated by the script
+    category: string;
 }
 
 
@@ -44,12 +43,12 @@ interface FirestoreRestaurantDetails {
 export type RecommendationResult = FinalOutput[number] & {
     criteria: RestaurantCriteria;
     photoUrl?: string;
-    placeId: string; 
+    placeId: string;
     websiteUri?: string;
     googleMapsUri?: string;
-    address?: string; 
+    address?: string;
     rating?: number;
-    userRatingsTotal?: number; 
+    userRatingsTotal?: number;
 };
 
 /**
@@ -76,7 +75,7 @@ export async function getRestaurantSuggestion(
       restaurants: initialCandidates,
       criteria: criteriaForAI,
     });
-    
+
     if (!filteredPlaceIds || filteredPlaceIds.length === 0) {
       console.warn("AI primary filtering resulted in no suitable restaurants.");
       return { error: "AIによる一次判定で、グループ向けのお店が見つかりませんでした。条件を変えてお試しください。"};
@@ -84,79 +83,102 @@ export async function getRestaurantSuggestion(
     console.log(`AI primary filtering narrowed down to ${filteredPlaceIds.length} candidates: ${filteredPlaceIds.join(', ')}`);
 
     console.log("Step 3: Fetching details for filtered candidates (cache-first strategy)...");
-    const detailPromises = filteredPlaceIds.map(async (id): Promise<ApiRestaurantDetails | null> => {
+    const detailedCandidatesPromises = filteredPlaceIds.map(async (id): Promise<ApiRestaurantDetails | null> => {
       const docRef = adminDb.collection("shinjuku-places").doc(id);
       const docSnap = await docRef.get();
 
       if (docSnap.exists) {
         const cachedData = docSnap.data() as FirestoreRestaurantDetails;
         console.log(`[CACHE HIT] Firestore: Fetched '${cachedData?.name}' (ID: ${id}) from shinjuku-places.`);
-        
+
         // Transform Firestore structure back to ApiRestaurantDetails structure
         const { createdAt, updatedAt, isActive, category, weekdayDescriptions, ...otherCachedFields } = cachedData;
         const apiDetailsFromCache: ApiRestaurantDetails = {
-            ...otherCachedFields, // id, name, formattedAddress, rating, photos, reviews, etc.
+            ...otherCachedFields,
+            photos: otherCachedFields.photos || [], // Ensure photos is an array
+            reviews: otherCachedFields.reviews || [], // Ensure reviews is an array
             regularOpeningHours: weekdayDescriptions ? { weekdayDescriptions } : undefined,
         };
         return apiDetailsFromCache;
       } else {
         console.log(`[CACHE MISS] Firestore: No data for ID: ${id} in shinjuku-places. Fetching from API...`);
-        const detailsFromApi = await getRestaurantDetails(id); // This is ApiRestaurantDetails type
+        const detailsFromApi = await getRestaurantDetails(id);
         if (detailsFromApi) {
+          // Ensure reviews and photos are present, even if API returns them as undefined/null
+          // (though getRestaurantDetails should ideally handle this for its return type)
+          const reviewsFromApi = detailsFromApi.reviews || [];
+          const photosFromApi = detailsFromApi.photos || [];
+
+          // Only save to DB if essential information like reviews is present (or adjust this condition)
+          // For now, we'll save what we get, but log if reviews are missing.
+          if (reviewsFromApi.length === 0) {
+            console.warn(`[DB SAVE PREP] No reviews found for ${detailsFromApi.name} (ID: ${id}) from API. Will save with empty reviews array.`);
+          }
+
           const now = Timestamp.now();
-          // Transform ApiRestaurantDetails to FirestoreRestaurantDetails structure for saving
           const firestoreDocData: FirestoreRestaurantDetails = {
             id: detailsFromApi.id,
             name: detailsFromApi.name,
             formattedAddress: detailsFromApi.formattedAddress,
             rating: detailsFromApi.rating,
             userRatingCount: detailsFromApi.userRatingCount,
-            photos: detailsFromApi.photos,
-            reviews: detailsFromApi.reviews,
+            photos: photosFromApi,
+            reviews: reviewsFromApi,
             websiteUri: detailsFromApi.websiteUri,
             googleMapsUri: detailsFromApi.googleMapsUri,
             internationalPhoneNumber: detailsFromApi.internationalPhoneNumber,
             weekdayDescriptions: detailsFromApi.regularOpeningHours?.weekdayDescriptions,
-
-            // Admin fields
             createdAt: now,
             updatedAt: now,
             isActive: true,
-            category: "restaurant", // Example category, could be dynamic
+            category: "restaurant",
           };
           await docRef.set(firestoreDocData);
           console.log(`[CACHE SAVE] Firestore: Saved '${detailsFromApi.name}' (ID: ${id}) to shinjuku-places.`);
+          // Return the structure the rest of the app expects
+          return {
+            ...detailsFromApi,
+            reviews: reviewsFromApi, // Ensure it's an array
+            photos: photosFromApi,   // Ensure it's an array
+          };
+        } else {
+          console.warn(`[API FETCH FAIL] Failed to get details from API for ID: ${id}.`);
+          return null;
         }
-        return detailsFromApi;
       }
     });
 
-    const detailedCandidatesFromSource = (await Promise.all(detailPromises)).filter((c): c is ApiRestaurantDetails => c !== null);
+    const detailedCandidatesFromSource = (await Promise.all(detailedCandidatesPromises)).filter((c): c is ApiRestaurantDetails => c !== null);
 
     if (detailedCandidatesFromSource.length === 0) {
-      console.warn("Failed to get detailed information for any candidate.");
+      console.warn("Failed to get detailed information for any candidate suitable for AI analysis.");
       return { error: "候補レストランの詳細情報の取得・分析に失敗しました。"};
     }
-    console.log(`Successfully fetched/retrieved details for ${detailedCandidatesFromSource.length} candidates.`);
+    console.log(`Successfully fetched/retrieved details for ${detailedCandidatesFromSource.length} candidates for AI analysis.`);
 
-    const candidatesForAI = detailedCandidatesFromSource.map(candidate => ({
-        id: candidate.id,
-        name: candidate.name,
-        reviewsText: candidate.reviews && candidate.reviews.length > 0
+    const candidatesForAI = detailedCandidatesFromSource.map(candidate => {
+        // Ensure reviews array exists for joining; default to "レビュー情報なし" if empty or null
+        const reviewsText = (candidate.reviews && candidate.reviews.length > 0)
             ? candidate.reviews.map(r => r.text?.text).filter(Boolean).join('\n\n---\n\n')
-            : "レビュー情報なし",
-        address: candidate.formattedAddress,
-        rating: candidate.rating,
-        userRatingsTotal: candidate.userRatingCount,
-        websiteUri: candidate.websiteUri,
-        googleMapsUri: candidate.googleMapsUri,
-    }));
+            : "レビュー情報なし";
+
+        return {
+            id: candidate.id,
+            name: candidate.name,
+            reviewsText: reviewsText,
+            address: candidate.formattedAddress,
+            rating: candidate.rating,
+            userRatingsTotal: candidate.userRatingCount,
+            websiteUri: candidate.websiteUri,
+            googleMapsUri: candidate.googleMapsUri,
+        };
+    });
 
 
     console.log("Step 4: Running final AI analysis on detailed candidates...");
     const top3Analyses = await selectAndAnalyzeBestRestaurants({
       candidates: candidatesForAI,
-      criteria: criteriaForAI, 
+      criteria: criteriaForAI,
     });
 
     if (!top3Analyses || top3Analyses.length === 0) {
@@ -169,28 +191,28 @@ export async function getRestaurantSuggestion(
     const finalResults: RecommendationResult[] = [];
 
     for (const result of top3Analyses) {
-        const llmSelectionPlaceId = result.suggestion.placeId; 
+        const llmSelectionPlaceId = result.suggestion.placeId;
         if (!llmSelectionPlaceId) {
             console.warn(`LLM selection for ${result.suggestion.restaurantName} is missing placeId. Skipping.`);
             continue;
         }
 
         const correspondingCandidate = detailedCandidatesFromSource.find(c => c.id === llmSelectionPlaceId);
-        
+
         if (!correspondingCandidate) {
             console.warn(`Could not find original candidate details for placeId: ${llmSelectionPlaceId} (Restaurant: ${result.suggestion.restaurantName}). Skipping this recommendation.`);
             continue;
         }
-        
+
         let photoUrl: string | undefined = undefined;
-        if (correspondingCandidate.photos && correspondingCandidate.photos.length > 0) {
+        if (correspondingCandidate.photos && correspondingCandidate.photos.length > 0 && correspondingCandidate.photos[0].name) {
             photoUrl = await buildPhotoUrl(correspondingCandidate.photos[0].name);
         }
 
         finalResults.push({
             ...result,
-            placeId: correspondingCandidate.id, 
-            criteria, 
+            placeId: correspondingCandidate.id,
+            criteria,
             photoUrl,
             websiteUri: correspondingCandidate.websiteUri,
             googleMapsUri: correspondingCandidate.googleMapsUri,
@@ -199,7 +221,7 @@ export async function getRestaurantSuggestion(
             userRatingsTotal: correspondingCandidate.userRatingCount,
         });
     }
-    
+
     console.log("All steps completed. Returning final recommendations to client.");
     return { data: finalResults };
 
@@ -214,4 +236,3 @@ export async function getRestaurantSuggestion(
     return { error: `処理中にエラーが発生しました: ${errorMessage}` };
   }
 }
-
