@@ -8,36 +8,51 @@ secretEnvironmentVariables:
   # Firebase Admin SDKの初期化に利用
   - key: FIREBASE_PROJECT_ID
     secret: FIREBASE_PROJECT_ID
+    version: latest
   - key: FIREBASE_CLIENT_EMAIL
     secret: FIREBASE_CLIENT_EMAIL
+    version: latest
   - key: FIREBASE_PRIVATE_KEY
     secret: FIREBASE_PRIVATE_KEY
+    version: latest
 
   # その他のサーバーサイドAPIキー
   - key: GEMINI_API_KEY
     secret: GEMINI_API_KEY
+    version: latest
   - key: GOOGLE_PLACES_API_KEY # Places APIをサーバーサイドで使う場合
     secret: GOOGLE_PLACES_API_KEY
+    version: latest
 
   # --- ブラウザでも利用する公開鍵 (NEXT_PUBLIC_ 接頭辞付き) ---
   # Next.jsでは、これらの変数はサーバーサイドでもビルド時にも利用可能です。
   - key: NEXT_PUBLIC_FIREBASE_API_KEY
     secret: NEXT_PUBLIC_FIREBASE_API_KEY
+    version: latest
   - key: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
     secret: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    version: latest
   - key: NEXT_PUBLIC_FIREBASE_PROJECT_ID
     secret: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    version: latest
   - key: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
     secret: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+    version: latest
   - key: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
     secret: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+    version: latest
   - key: NEXT_PUBLIC_FIREBASE_APP_ID
     secret: NEXT_PUBLIC_FIREBASE_APP_ID
+    version: latest
 
 # 実行環境の設定
 runConfig:
   # 最大インスタンス数 (コスト管理のため低めに設定)
   maxInstances: 1
+  # For non-secret runtime environment variables, you can define them here:
+  environmentVariables:
+    TEST_VAR_DIRECT: "HelloFromApphostingYAMLAgain"
+    ANOTHER_TEST_VAR: "ThisIsYetAnotherTest"
 
 # buildConfig:
 # NEXT_PUBLIC_で始まる変数は、クライアントサイドのJSに埋め込むためにビルド時にも必要です。
