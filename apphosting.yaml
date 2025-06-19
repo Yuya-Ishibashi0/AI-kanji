@@ -1,13 +1,53 @@
 # Firebase App Hosting バックエンド設定
 # https://firebase.google.com/docs/app-hosting/configure
 
+# Secrets from Google Cloud Secret Manager
+# これらのシークレットは、下記で指定した名前と一致するよう、事前にSecret Managerで作成しておく必要があります。
+secretEnvironmentVariables:
+  - key: FIREBASE_PROJECT_ID
+    secret: FIREBASE_PROJECT_ID
+    version: latest
+  - key: FIREBASE_CLIENT_EMAIL
+    secret: FIREBASE_CLIENT_EMAIL
+    version: latest
+  - key: FIREBASE_PRIVATE_KEY
+    secret: FIREBASE_PRIVATE_KEY
+    version: latest
+  - key: GOOGLE_PLACES_API_KEY
+    secret: GOOGLE_PLACES_API_KEY
+    version: latest
+  - key: GEMINI_API_KEY
+    secret: GEMINI_API_KEY
+    version: latest
+  - key: NEXT_PUBLIC_FIREBASE_API_KEY
+    secret: NEXT_PUBLIC_FIREBASE_API_KEY
+    version: latest
+  - key: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    secret: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    version: latest
+  - key: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    secret: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    version: latest
+  - key: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+    secret: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+    version: latest
+  - key: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+    secret: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+    version: latest
+  - key: NEXT_PUBLIC_FIREBASE_APP_ID
+    secret: NEXT_PUBLIC_FIREBASE_APP_ID
+    version: latest
+
 # 実行環境の設定
 runConfig:
-  # For non-secret runtime environment variables, you can define them here:
+  maxInstances: 1
+  # デバッグ用の直接設定する環境変数（Secret Managerを経由しない）
   environmentVariables:
-    TEST_VAR_DIRECT: "HelloFromMinimalYAML"
-    ANOTHER_TEST_VAR: "MinimalTestSuccessful"
+    TEST_VAR_DIRECT: "HelloFromApphostingYAML"
+    ANOTHER_TEST_VAR: "ThisIsAlsoATest"
 
 # buildConfig:
-#  environmentVariables:
-#    NEXT_PUBLIC_MINIMAL_BUILD_VAR: "MinimalBuild"
+#   # ビルド時にのみ利用する非公開の環境変数
+#   # NEXT_PUBLIC_ 変数は secretEnvironmentVariables 経由でもビルド時に利用可能です
+#   environmentVariables:
+#     NEXT_PUBLIC_ANOTHER_VAR: "build_value"
