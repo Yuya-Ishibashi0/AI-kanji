@@ -1281,3 +1281,4 @@ Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allow
  GET / [32m200[39m in 484ms
  GET /?monospaceUid=425355 [32m200[39m in 612ms
  GET / [32m200[39m in 412ms
+ [32m[1m✓[22m[39m Compiled in 220ms
