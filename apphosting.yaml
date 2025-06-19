@@ -3,5 +3,11 @@
 
 # 実行環境の設定
 runConfig:
+  # For non-secret runtime environment variables, you can define them here:
   environmentVariables:
-    TEST_VAR_DIRECT: "HelloFromApphostingYAMLAgain"
+    TEST_VAR_DIRECT: "HelloFromMinimalYAML"
+    ANOTHER_TEST_VAR: "MinimalTestSuccessful"
+
+# buildConfig:
+#  environmentVariables:
+#    NEXT_PUBLIC_MINIMAL_BUILD_VAR: "MinimalBuild"
