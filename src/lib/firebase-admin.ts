@@ -40,7 +40,8 @@ secretEnvVarsToLog.forEach(varName => {
   if (value !== undefined) {
     console.log(`[firebase-admin.ts] ${varName}: EXISTS (length: ${value.length})`);
     if (varName === 'FIREBASE_PRIVATE_KEY') {
-      console.log(`[firebase-admin.ts] ${varName} (preview, first 10 after any processing): ${value.substring(0,10)}...`);
+      console.log(`[firebase-admin.ts] ${varName} (preview, first 30 after any processing): ${value.substring(0,30)}...`);
+      console.log(`[firebase-admin.ts] ${varName} (preview, last 30 after any processing): ...${value.substring(value.length - 30)}`);
       console.log(`[firebase-admin.ts] ${varName} contains literal \\\\n (before replace): ${value.includes('\\n')}`);
       const formattedForCheck = value.replace(/\\n/g, '\n');
       console.log(`[firebase-admin.ts] ${varName} (after replace) contains actual newline: ${formattedForCheck.includes('\n')}`);
@@ -53,7 +54,7 @@ console.log('[firebase-admin.ts] --- Finished Logging Secret Environment Variabl
 
 
 import * as admin from 'firebase-admin';
-import type { Firestore } from 'firebase-admin/firestore';
+import type { Firestore, ServiceAccount } from 'firebase-admin/firestore';
 
 let adminDb: Firestore;
 
@@ -65,32 +66,29 @@ if (!admin.apps.length) {
 
   if (!projectId || !clientEmail || !privateKey) {
     console.error('[firebase-admin.ts FATAL ERROR] Missing required Firebase Admin SDK environment variables (FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, or FIREBASE_PRIVATE_KEY) for Admin SDK init. Firestore functionality will be MOCKED.');
-    // Fallback to a mock DB to prevent crashes, but log that it's mocked.
     adminDb = {
       collection: (name: string) => {
-        console.warn(`[firebase-admin.ts MOCK DB ACTIVE] adminDb.collection('${name}') called, but Firestore is NOT INITIALIZED due to missing env vars.`);
+        console.warn(`[firebase-admin.ts MOCK DB ACTIVE - MISSING ENV VARS] adminDb.collection('${name}') called.`);
         return {
           doc: (docId: string) => ({
             get: async () => {
-              console.warn(`[firebase-admin.ts MOCK DB ACTIVE] adminDb.collection('${name}').doc('${docId}').get() called.`);
+              console.warn(`[firebase-admin.ts MOCK DB ACTIVE - MISSING ENV VARS] ...doc('${docId}').get() called.`);
               return ({ exists: false, data: () => undefined });
             },
             set: async (data: any) => {
-              console.warn(`[firebase-admin.ts MOCK DB ACTIVE] adminDb.collection('${name}').doc('${docId}').set() called with data:`, data);
+              console.warn(`[firebase-admin.ts MOCK DB ACTIVE - MISSING ENV VARS] ...doc('${docId}').set() called with data:`, data);
               return Promise.resolve();
             }
           })
         } as any;
       }
     } as any;
-    console.log('[firebase-admin.ts] Firebase Admin SDK initialization SKIPPED. adminDb is MOCKED.');
+    console.log('[firebase-admin.ts] Firebase Admin SDK initialization SKIPPED (missing env vars). adminDb is MOCKED.');
   } else {
-    // IMPORTANT: Replace literal "\\n" with actual newline characters if the key was stored as a single line string.
-    // This is crucial if the private key is coming from an environment variable that might have escaped newlines.
     privateKey = privateKey.replace(/\\n/g, '\n');
     console.log('[firebase-admin.ts] All required Admin SDK env vars seem present. Preparing service account object...');
     try {
-      const serviceAccount = {
+      const serviceAccount: ServiceAccount = {
         projectId: projectId,
         clientEmail: clientEmail,
         privateKey: privateKey,
@@ -101,22 +99,32 @@ if (!admin.apps.length) {
       });
       console.log('✅ [firebase-admin.ts] Firebase Admin SDK initialized successfully!');
       adminDb = admin.firestore();
-    } catch (e) {
-      console.error('[firebase-admin.ts FATAL ERROR] Firebase Admin SDK initialization failed.', e);
-      const error = e as Error;
-      console.error(`[firebase-admin.ts ERROR DETAILS] Name: ${error.name}, Message: ${error.message}`);
-      // Fallback to a mock DB in case of initialization failure as well
+    } catch (e: any) {
+      console.error('🔥 [firebase-admin.ts FATAL ERROR] Firebase Admin SDK initialization FAILED. Firestore functionality will be MOCKED.');
+      console.error(`[firebase-admin.ts ERROR DETAILS] Error Type: ${e.constructor.name}`);
+      if (e.message) {
+        console.error(`[firebase-admin.ts ERROR DETAILS] Message: ${e.message}`);
+      }
+      if (e.code) {
+        console.error(`[firebase-admin.ts ERROR DETAILS] Code: ${e.code}`);
+      }
+      if (e.errorInfo) { // Firebase specific error info
+         console.error(`[firebase-admin.ts ERROR DETAILS] Firebase Error Info Code: ${e.errorInfo.code}`);
+         console.error(`[firebase-admin.ts ERROR DETAILS] Firebase Error Info Message: ${e.errorInfo.message}`);
+      }
+      console.error('[firebase-admin.ts ERROR DETAILS] Full error object:', e);
+      
       adminDb = {
         collection: (name: string) => {
-          console.warn(`[firebase-admin.ts MOCK DB ACTIVE] adminDb.collection('${name}') called, but Firestore FAILED TO INITIALIZE.`);
+          console.warn(`[firebase-admin.ts MOCK DB ACTIVE - INIT FAILURE] adminDb.collection('${name}') called.`);
           return {
             doc: (docId: string) => ({
               get: async () => {
-                console.warn(`[firebase-admin.ts MOCK DB ACTIVE] adminDb.collection('${name}').doc('${docId}').get() called during init failure.`);
+                console.warn(`[firebase-admin.ts MOCK DB ACTIVE - INIT FAILURE] ...doc('${docId}').get() called.`);
                 return ({ exists: false, data: () => undefined });
               },
               set: async (data: any) => {
-                console.warn(`[firebase-admin.ts MOCK DB ACTIVE] adminDb.collection('${name}').doc('${docId}').set() called with data during init failure:`, data);
+                console.warn(`[firebase-admin.ts MOCK DB ACTIVE - INIT FAILURE] ...doc('${docId}').set() called with data:`, data);
                 return Promise.resolve();
               }
             })
