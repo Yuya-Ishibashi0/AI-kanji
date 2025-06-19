@@ -4,7 +4,7 @@
 import { FinalOutput, selectAndAnalyzeBestRestaurants } from "@/ai/flows/select-and-analyze";
 import { filterRestaurantsForGroup } from "@/ai/flows/filter-restaurants";
 import { type RestaurantCriteria } from "@/lib/schemas";
-import { getRestaurantDetails, buildPhotoUrl, type RestaurantCandidate, type RestaurantDetails as ApiRestaurantDetails } from "@/services/google-places-service";
+import { getRestaurantDetails, buildPhotoUrl, textSearchNew, type RestaurantCandidate, type RestaurantDetails as ApiRestaurantDetails } from "@/services/google-places-service";
 import { format } from "date-fns";
 import { adminDb } from "@/lib/firebase-admin";
 import { Timestamp } from "firebase-admin/firestore";
@@ -15,7 +15,7 @@ interface FirestoreRestaurantDetails extends ApiRestaurantDetails {
     updatedAt: Timestamp; 
     isActive: boolean;
     category: string; 
-    nationalPhoneNumber?: string;
+    // nationalPhoneNumber?: string; // This was mapped from internationalPhoneNumber, but Places API directly provides internationalPhoneNumber
     // weekdayDescriptions is already part of regularOpeningHours in ApiRestaurantDetails if structured correctly
 }
 
@@ -81,14 +81,13 @@ export async function getRestaurantSuggestion(
         const detailsFromApi = await getRestaurantDetails(id);
         if (detailsFromApi) {
           const now = Timestamp.now();
+          // FirestoreRestaurantDetails には ApiRestaurantDetails の全フィールドが含まれる
           const firestoreDetails: FirestoreRestaurantDetails = {
-            ...detailsFromApi,
-            nationalPhoneNumber: detailsFromApi.internationalPhoneNumber, // マッピング
-            // weekdayDescriptions は detailsFromApi.regularOpeningHours?.weekdayDescriptions にあるはず
+            ...detailsFromApi, // photos, reviews, etc. are included here
             createdAt: now,
             updatedAt: now, 
             isActive: true,
-            category: "restaurant",
+            category: "restaurant", // Example category
           };
           await docRef.set(firestoreDetails);
           console.log(`[CACHE SAVE] Firestore: Saved '${detailsFromApi.name}' (ID: ${id}) to shinjuku-places.`);
@@ -122,7 +121,7 @@ export async function getRestaurantSuggestion(
     console.log("Step 4: Running final AI analysis on detailed candidates...");
     const top3Analyses = await selectAndAnalyzeBestRestaurants({
       candidates: candidatesForAI,
-      criteria: criteriaForAI,
+      criteria: criteriaForAI, // Pass the full criteria including custom prompts
     });
 
     if (!top3Analyses || top3Analyses.length === 0) {
@@ -150,13 +149,14 @@ export async function getRestaurantSuggestion(
         
         let photoUrl: string | undefined = undefined;
         if (correspondingCandidate.photos && correspondingCandidate.photos.length > 0) {
+            // Use the already async buildPhotoUrl
             photoUrl = await buildPhotoUrl(correspondingCandidate.photos[0].name);
         }
 
         finalResults.push({
             ...result,
             placeId: correspondingCandidate.id, 
-            criteria,
+            criteria, // Pass the original criteria (with Date object) to the result for PreferenceDisplayCard
             photoUrl,
             websiteUri: correspondingCandidate.websiteUri,
             googleMapsUri: correspondingCandidate.googleMapsUri,
@@ -180,4 +180,3 @@ export async function getRestaurantSuggestion(
     return { error: `処理中にエラーが発生しました: ${errorMessage}` };
   }
 }
-
