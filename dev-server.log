@@ -1,0 +1,105 @@
+   [1m[38;2;173;127;168m▲ Next.js 15.3.3[39m[22m (Turbopack)
+   - Local:        http://localhost:9002
+   - Network:      http://0.0.0.0:9002
+   - Environments: .env.local
+
+ [32m[1m✓[22m[39m Starting...
+ [32m[1m✓[22m[39m Ready in 4.2s
+ [37m[1m○[22m[39m Compiling / ...
+ [32m[1m✓[22m[39m Compiled / in 39.3s
+[firebase-admin.ts TEMPORARY DEBUG] Module starting to load. Timestamp: 2025-06-19T13:30:41.148Z
+[firebase-admin.ts TEMPORARY DEBUG] NODE_ENV: development
+[firebase-admin.ts TEMPORARY DEBUG] --- Logging Direct Environment Variables ---
+[firebase-admin.ts TEMPORARY DEBUG] TEST_VAR_DIRECT: UNDEFINED
+[firebase-admin.ts TEMPORARY DEBUG] ANOTHER_TEST_VAR: UNDEFINED
+[firebase-admin.ts TEMPORARY DEBUG] --- Finished Logging Direct Environment Variables ---
+[firebase-admin.ts TEMPORARY DEBUG] --- Logging Secret Environment Variables ---
+[firebase-admin.ts TEMPORARY DEBUG] FIREBASE_PROJECT_ID: EXISTS (length: 17)
+[firebase-admin.ts TEMPORARY DEBUG] FIREBASE_CLIENT_EMAIL: EXISTS (length: 65)
+[firebase-admin.ts TEMPORARY DEBUG] FIREBASE_PRIVATE_KEY: EXISTS (length: 1704)
+[firebase-admin.ts TEMPORARY DEBUG] FIREBASE_PRIVATE_KEY (preview, first 10 after any processing): -----BEGIN...
+[firebase-admin.ts TEMPORARY DEBUG] FIREBASE_PRIVATE_KEY contains literal \\n: false
+[firebase-admin.ts TEMPORARY DEBUG] FIREBASE_PRIVATE_KEY (after replace) contains actual newline: true
+[firebase-admin.ts TEMPORARY DEBUG] GOOGLE_PLACES_API_KEY: EXISTS (length: 39)
+[firebase-admin.ts TEMPORARY DEBUG] GEMINI_API_KEY: EXISTS (length: 39)
+[firebase-admin.ts TEMPORARY DEBUG] NEXT_PUBLIC_FIREBASE_API_KEY: EXISTS (length: 39)
+[firebase-admin.ts TEMPORARY DEBUG] NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: EXISTS (length: 33)
+[firebase-admin.ts TEMPORARY DEBUG] NEXT_PUBLIC_FIREBASE_PROJECT_ID: EXISTS (length: 17)
+[firebase-admin.ts TEMPORARY DEBUG] NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: EXISTS (length: 37)
+[firebase-admin.ts TEMPORARY DEBUG] NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: EXISTS (length: 11)
+[firebase-admin.ts TEMPORARY DEBUG] NEXT_PUBLIC_FIREBASE_APP_ID: EXISTS (length: 40)
+[firebase-admin.ts TEMPORARY DEBUG] --- Finished Logging Secret Environment Variables ---
+[firebase-admin.ts TEMPORARY DEBUG] Module finished loading.
+ GET /?monospaceUid=214501 [32m200[39m in 44463ms
+ [33m[1m⚠[22m[39m Cross origin request detected from 9000-firebase-studio-1749405167197.cluster-fdkw7vjj7bgguspe3fbbc25tra.cloudworkstations.dev to /_next/* resource. In a future major version of Next.js, you will need to explicitly configure "allowedDevOrigins" in next.config to allow this.
+Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allowedDevOrigins
+Step 1 & 2: Starting Places API search and AI primary filtering...
+Found 10 initial candidates from Places API.
+AI primary filtering narrowed down to 2 candidates: ChIJFTK8FNqMGGARuPBL2ZwejjQ, ChIJ-3_eBNuMGGARNLAqqInDqNo
+Step 3: Fetching details for filtered candidates (cache-first strategy)...
+[firebase-admin.ts MOCK (active due to full commenting)] adminDb.collection('shinjuku-places') called. Firestore functionality is disabled.
+[firebase-admin.ts MOCK (active)] adminDb.collection('shinjuku-places').doc('ChIJFTK8FNqMGGARuPBL2ZwejjQ').get() called.
+[firebase-admin.ts MOCK (active due to full commenting)] adminDb.collection('shinjuku-places') called. Firestore functionality is disabled.
+[firebase-admin.ts MOCK (active)] adminDb.collection('shinjuku-places').doc('ChIJ-3_eBNuMGGARNLAqqInDqNo').get() called.
+[CACHE MISS] Firestore: No data for ID: ChIJFTK8FNqMGGARuPBL2ZwejjQ in shinjuku-places. Fetching from API...
+[CACHE MISS] Firestore: No data for ID: ChIJ-3_eBNuMGGARNLAqqInDqNo in shinjuku-places. Fetching from API...
+[firebase-admin.ts MOCK (active)] adminDb.collection('shinjuku-places').doc('ChIJFTK8FNqMGGARuPBL2ZwejjQ').set() called.
+[CACHE SAVE] Firestore: Saved '個室 創作和食 ワイン 縁 新宿店' (ID: ChIJFTK8FNqMGGARuPBL2ZwejjQ) to shinjuku-places.
+[firebase-admin.ts MOCK (active)] adminDb.collection('shinjuku-places').doc('ChIJ-3_eBNuMGGARNLAqqInDqNo').set() called.
+[CACHE SAVE] Firestore: Saved 'ディヴァーノ・ワインダイニング新宿' (ID: ChIJ-3_eBNuMGGARNLAqqInDqNo) to shinjuku-places.
+Successfully fetched/retrieved details for 2 candidates for AI analysis.
+Step 4: Running final AI analysis on detailed candidates...
+Calling analyzeRestaurantReviews (for Kanji) for: 個室 創作和食 ワイン 縁 新宿店
+Calling analyzeRestaurantReviews (for Kanji) for: ディヴァーノ・ワインダイニング新宿
+Returning 2 final recommendations from skilled secretary.
+AI selected 2 final recommendations.
+Step 5: Fetching photo URLs and formatting final results...
+All steps completed. Returning final recommendations to client.
+ POST /?monospaceUid=214501 [32m200[39m in 11412ms
+ [32m[1m✓[22m[39m Compiled in 599ms
+ [32m[1m✓[22m[39m Compiled / in 54ms
+[firebase-admin.ts] Module starting to load. Timestamp: 2025-06-19T13:33:10.017Z
+[firebase-admin.ts] NODE_ENV: development
+[firebase-admin.ts] --- Logging Direct Environment Variables (from .env.local or App Hosting direct value) ---
+[firebase-admin.ts] TEST_VAR_DIRECT: UNDEFINED
+[firebase-admin.ts] ANOTHER_TEST_VAR: UNDEFINED
+[firebase-admin.ts] --- Finished Logging Direct Environment Variables ---
+[firebase-admin.ts] --- Logging Secret Environment Variables (from .env.local or Secret Manager) ---
+[firebase-admin.ts] FIREBASE_PROJECT_ID: EXISTS (length: 17)
+[firebase-admin.ts] FIREBASE_CLIENT_EMAIL: EXISTS (length: 65)
+[firebase-admin.ts] FIREBASE_PRIVATE_KEY: EXISTS (length: 1704)
+[firebase-admin.ts] FIREBASE_PRIVATE_KEY (preview, first 10 after any processing): -----BEGIN...
+[firebase-admin.ts] FIREBASE_PRIVATE_KEY contains literal \\n (before replace): false
+[firebase-admin.ts] FIREBASE_PRIVATE_KEY (after replace) contains actual newline: true
+[firebase-admin.ts] GOOGLE_PLACES_API_KEY: EXISTS (length: 39)
+[firebase-admin.ts] GEMINI_API_KEY: EXISTS (length: 39)
+[firebase-admin.ts] NEXT_PUBLIC_FIREBASE_API_KEY: EXISTS (length: 39)
+[firebase-admin.ts] NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: EXISTS (length: 33)
+[firebase-admin.ts] NEXT_PUBLIC_FIREBASE_PROJECT_ID: EXISTS (length: 17)
+[firebase-admin.ts] NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: EXISTS (length: 37)
+[firebase-admin.ts] NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: EXISTS (length: 11)
+[firebase-admin.ts] NEXT_PUBLIC_FIREBASE_APP_ID: EXISTS (length: 40)
+[firebase-admin.ts] --- Finished Logging Secret Environment Variables ---
+[firebase-admin.ts] No Firebase admin apps initialized. Attempting to initialize...
+[firebase-admin.ts] All required Admin SDK env vars seem present. Preparing service account object...
+[firebase-admin.ts] Service account object constructed. Calling admin.initializeApp()...
+[firebase-admin.ts FATAL ERROR] Firebase Admin SDK initialization failed. TypeError: Cannot read properties of undefined (reading 'INTERNAL')
+    at [project]/src/lib/firebase-admin.ts [app-rsc] (ecmascript) (src/lib/firebase-admin.ts:99:26)
+    at <unknown> (src/app/actions.ts:17:0)
+    at [project]/src/app/actions.ts [app-rsc] (ecmascript) (.next/server/chunks/ssr/[root-of-the-server]__c56fc87b._.js:900:1)
+    at <unknown> (.next/server/chunks/ssr/[root-of-the-server]__c56fc87b._.js:1121:147)
+    at [project]/.next-internal/server/app/page/actions.js { ACTIONS_MODULE0 => "[project]/src/app/actions.ts [app-rsc] (ecmascript)" } [app-rsc] (server actions loader, ecmascript) <module evaluation> (.next/server/chunks/ssr/[root-of-the-server]__c56fc87b._.js:1119:1)
+    at <unknown> (.next/server/chunks/ssr/[root-of-the-server]__c56fc87b._.js:1155:364)
+    at [project]/.next-internal/server/app/page/actions.js { ACTIONS_MODULE0 => "[project]/src/app/actions.ts [app-rsc] (ecmascript)" } [app-rsc] (server actions loader, ecmascript) (.next/server/chunks/ssr/[root-of-the-server]__c56fc87b._.js:1151:1)
+    at Object.<anonymous> (.next/server/app/page.js:30:9)
+[0m [90m  97 |[39m       }[33m;[39m[0m
+[0m [90m  98 |[39m       console[33m.[39mlog([32m'[firebase-admin.ts] Service account object constructed. Calling admin.initializeApp()...'[39m)[33m;[39m[0m
+[0m[31m[1m>[22m[39m[90m  99 |[39m       admin[33m.[39minitializeApp({[0m
+[0m [90m     |[39m                          [31m[1m^[22m[39m[0m
+[0m [90m 100 |[39m         credential[33m:[39m admin[33m.[39mcredential[33m.[39mcert(serviceAccount)[33m,[39m[0m
+[0m [90m 101 |[39m       })[33m;[39m[0m
+[0m [90m 102 |[39m       console[33m.[39mlog([32m'✅ [firebase-admin.ts] Firebase Admin SDK initialized successfully!'[39m)[33m;[39m[0m
+[firebase-admin.ts ERROR DETAILS] Name: TypeError, Message: Cannot read properties of undefined (reading 'INTERNAL')
+[firebase-admin.ts] adminDb is MOCKED due to initialization failure.
+[firebase-admin.ts] Module finished loading.
+ GET / [32m200[39m in 3143ms
