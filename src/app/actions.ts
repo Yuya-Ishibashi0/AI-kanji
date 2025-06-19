@@ -10,17 +10,13 @@ import { adminDb } from "@/lib/firebase-admin";
 import { Timestamp } from "firebase-admin/firestore";
 
 // Firestoreに保存する際の型 (APIの型 + 管理フィールド)
-// RestaurantDetails in Firestore (includes management fields)
 interface FirestoreRestaurantDetails extends ApiRestaurantDetails {
     createdAt: Timestamp;
-    updatedAt: Timestamp; // or lastSyncAt
+    updatedAt: Timestamp; 
     isActive: boolean;
-    category: string; // e.g., "restaurant"
-    // subArea?: string; // If needed later
-    // nationalPhoneNumber is used in screenshot, map from internationalPhoneNumber
+    category: string; 
     nationalPhoneNumber?: string;
-    // weekdayDescriptions is directly under regularOpeningHours in API, adjust for Firestore
-    weekdayDescriptions?: string[]; 
+    // weekdayDescriptions is already part of regularOpeningHours in ApiRestaurantDetails if structured correctly
 }
 
 
@@ -28,12 +24,12 @@ interface FirestoreRestaurantDetails extends ApiRestaurantDetails {
 export type RecommendationResult = FinalOutput[number] & {
     criteria: RestaurantCriteria;
     photoUrl?: string;
-    placeId: string; // placeIdを明示的に追加
+    placeId: string; 
     websiteUri?: string;
     googleMapsUri?: string;
-    address?: string; // 住所も返す
+    address?: string; 
     rating?: number;
-    userRatingsTotal?: number; // Firestoreでは userRatingCount
+    userRatingsTotal?: number; 
 };
 
 /**
@@ -75,13 +71,11 @@ export async function getRestaurantSuggestion(
       if (docSnap.exists) {
         const cachedData = docSnap.data() as FirestoreRestaurantDetails;
         console.log(`[CACHE HIT] Firestore: Fetched '${cachedData?.name}' (ID: ${id}) from shinjuku-places.`);
-        // Firestoreの型からAPIの型へ（管理フィールドを除外、タイムスタンプをDateに）
-        // 必要に応じて、FirestoreのweekdayDescriptionsをAPIの形式に合わせる（今回はAPI側で調整済み）
-        // nationalPhoneNumberはそのまま利用
-        return {
-            ...cachedData,
-            // Timestamps are handled by Firestore type, no conversion needed for API details type here if not present
-        } as ApiRestaurantDetails; // キャストの調整が必要な場合がある
+        
+        // Firestoreの型からAPIの型へ（管理フィールドを除外し、必要なら型変換）
+        // ApiRestaurantDetailsに合わせるため、createdAt, updatedAt, isActive, categoryは含めない
+        const { createdAt, updatedAt, isActive, category, ...apiDetailsFromCache } = cachedData;
+        return apiDetailsFromCache as ApiRestaurantDetails;
       } else {
         console.log(`[CACHE MISS] Firestore: No data for ID: ${id} in shinjuku-places. Fetching from API...`);
         const detailsFromApi = await getRestaurantDetails(id);
@@ -89,12 +83,10 @@ export async function getRestaurantSuggestion(
           const now = Timestamp.now();
           const firestoreDetails: FirestoreRestaurantDetails = {
             ...detailsFromApi,
-            // nationalPhoneNumber を internationalPhoneNumberからマッピング (APIがinternationalのみ返す場合)
-            // スクリーンショットにnationalPhoneNumberがあるので、APIレスポンスにそれがあれば使う
-            nationalPhoneNumber: detailsFromApi.internationalPhoneNumber, // またはAPIがnationalPhoneNumberを返すならそれ
-            weekdayDescriptions: detailsFromApi.regularOpeningHours?.weekdayDescriptions, // APIから直接取得したものをマッピング
+            nationalPhoneNumber: detailsFromApi.internationalPhoneNumber, // マッピング
+            // weekdayDescriptions は detailsFromApi.regularOpeningHours?.weekdayDescriptions にあるはず
             createdAt: now,
-            updatedAt: now, // lastSyncAt の代わりに updatedAt を使用
+            updatedAt: now, 
             isActive: true,
             category: "restaurant",
           };
@@ -113,7 +105,6 @@ export async function getRestaurantSuggestion(
     }
     console.log(`Successfully fetched/retrieved details for ${detailedCandidatesFromSource.length} candidates.`);
 
-    // AIフローに渡すために、レビューテキストを結合
     const candidatesForAI = detailedCandidatesFromSource.map(candidate => ({
         id: candidate.id,
         name: candidate.name,
@@ -144,9 +135,7 @@ export async function getRestaurantSuggestion(
     const finalResults: RecommendationResult[] = [];
 
     for (const result of top3Analyses) {
-        // AIの出力 (result.suggestion.restaurantName) と元の詳細情報 (detailedCandidatesFromSource) を紐付ける
-        // placeIdで紐付けるのがより確実
-        const llmSelectionPlaceId = result.suggestion.placeId; // select-and-analyze.ts の LLMSelectionItemSchema で placeId を返すようにする
+        const llmSelectionPlaceId = result.suggestion.placeId; 
         if (!llmSelectionPlaceId) {
             console.warn(`LLM selection for ${result.suggestion.restaurantName} is missing placeId. Skipping.`);
             continue;
@@ -161,8 +150,7 @@ export async function getRestaurantSuggestion(
         
         let photoUrl: string | undefined = undefined;
         if (correspondingCandidate.photos && correspondingCandidate.photos.length > 0) {
-            // 最初の写真の名前を使ってURLを生成
-            photoUrl = buildPhotoUrl(correspondingCandidate.photos[0].name);
+            photoUrl = await buildPhotoUrl(correspondingCandidate.photos[0].name);
         }
 
         finalResults.push({
@@ -192,3 +180,4 @@ export async function getRestaurantSuggestion(
     return { error: `処理中にエラーが発生しました: ${errorMessage}` };
   }
 }
+

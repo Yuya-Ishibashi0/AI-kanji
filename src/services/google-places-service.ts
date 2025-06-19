@@ -47,11 +47,10 @@ export interface RestaurantDetails {
   reviews?: PlaceReview[];
   websiteUri?: string;
   googleMapsUri?: string;
-  internationalPhoneNumber?: string; // Firestoreでは nationalPhoneNumber
+  internationalPhoneNumber?: string;
   regularOpeningHours?: {
-    weekdayDescriptions?: string[]; // Firestoreでは weekdayDescriptions
+    weekdayDescriptions?: string[];
   };
-  // Firestoreの独自フィールドは actions.ts で付与
 }
 
 export interface RestaurantCandidate {
@@ -64,9 +63,7 @@ interface TextSearchApiResponse {
   places: {
     id: string;
     displayName?: { text: string };
-    // editorialSummaryはより質の高い要約だが、reviewSummaryがなければこちらを使うことも検討
-    // editorialSummary?: { text: string; languageCode: string };
-    reviewSummary?: { text: string }; // 'reviews'フィールドがない場合のフォールバック
+    reviewSummary?: { text: string }; 
   }[];
 }
 
@@ -76,15 +73,15 @@ interface PlaceDetailsApiResponse {
     formattedAddress?: string;
     rating?: number;
     userRatingCount?: number;
-    reviews?: PlaceReview[]; // APIから直接この形で取得
-    photos?: PlacePhoto[];   // APIから直接この形で取得
+    reviews?: PlaceReview[]; 
+    photos?: PlacePhoto[];   
     websiteUri?: string;
     googleMapsUri?: string;
     internationalPhoneNumber?: string;
     regularOpeningHours?: {
       openNow?: boolean;
       weekdayDescriptions?: string[];
-      secondaryOpeningHours?: any[]; // 必要なら詳細定義
+      secondaryOpeningHours?: any[]; 
     };
 }
 
@@ -104,13 +101,12 @@ export async function textSearchNew(criteria: RestaurantCriteria): Promise<Resta
     headers: {
       'Content-Type': 'application/json',
       'X-Goog-Api-Key': GOOGLE_PLACES_API_KEY,
-      // displayName, id, reviewSummaryを取得
       'X-Goog-FieldMask': 'places.id,places.displayName,places.reviewSummary',
     },
     body: JSON.stringify({
       textQuery: query,
       languageCode: 'ja',
-      maxResultCount: 10, // 最初のフィルタリング候補なので10件程度
+      maxResultCount: 10, 
     }),
   });
 
@@ -129,7 +125,6 @@ export async function getRestaurantDetails(placeId: string): Promise<RestaurantD
   const url = `https://places.googleapis.com/v1/places/${placeId}`;
   if (!GOOGLE_PLACES_API_KEY) throw new Error('Google Places API key is not configured.');
   
-  // 必要なフィールドを網羅的に指定
   const fieldMask = 'id,displayName,formattedAddress,rating,userRatingCount,photos,reviews,websiteUri,googleMapsUri,internationalPhoneNumber,regularOpeningHours.weekdayDescriptions';
 
   try {
@@ -138,7 +133,7 @@ export async function getRestaurantDetails(placeId: string): Promise<RestaurantD
       headers: { 
         'X-Goog-Api-Key': GOOGLE_PLACES_API_KEY, 
         'X-Goog-FieldMask': fieldMask, 
-        'Accept-Language': 'ja' // レビューなどを日本語で取得
+        'Accept-Language': 'ja' 
       }
     });
 
@@ -159,17 +154,17 @@ export async function getRestaurantDetails(placeId: string): Promise<RestaurantD
       rating: place.rating,
       userRatingCount: place.userRatingCount,
       photos: place.photos,
-      reviews: place.reviews, // APIから取得したレビュー配列をそのまま渡す
+      reviews: place.reviews, 
       websiteUri: place.websiteUri,
       googleMapsUri: place.googleMapsUri,
       internationalPhoneNumber: place.internationalPhoneNumber,
-      regularOpeningHours: place.regularOpeningHours ? { // regularOpeningHoursが存在する場合のみ
+      regularOpeningHours: place.regularOpeningHours ? { 
         weekdayDescriptions: place.regularOpeningHours.weekdayDescriptions,
       } : undefined,
     };
   } catch (error) {
     console.error(`Error in getRestaurantDetails for placeId ${placeId}:`, error);
-    throw error; // エラーを再スローして呼び出し元で処理
+    throw error; 
   }
 }
 
@@ -179,9 +174,10 @@ export async function getRestaurantDetails(placeId: string): Promise<RestaurantD
  * @param maxHeightPx 写真の最大高さ（ピクセル）
  * @returns 写真の完全なURL、または photoName がない場合は undefined
  */
-export function buildPhotoUrl(photoName?: string, maxHeightPx: number = 600): string | undefined {
+export async function buildPhotoUrl(photoName?: string, maxHeightPx: number = 600): Promise<string | undefined> {
     if (!photoName || !GOOGLE_PLACES_API_KEY) {
         return undefined;
     }
     return `https://places.googleapis.com/v1/${photoName}/media?maxHeightPx=${maxHeightPx}&key=${GOOGLE_PLACES_API_KEY}`;
 }
+
