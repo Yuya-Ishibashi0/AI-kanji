@@ -196,11 +196,11 @@ Firebase App Hosting へデプロイする際は、`.env.local` ファイルは�
 
 1.  **Google Cloud Secret Manager にシークレットを作成:**
     Firebase プロジェクトに関連付けられた Google Cloud プロジェクトの Secret Manager で、以下の名前でシークレットを作成し、それぞれの値を設定します。（シークレット名は `apphosting.yaml` の `secretEnvironmentVariables` の `secret` フィールドと一致させます。）
-    *   `FIREBASE_PROJECT_ID`
-    *   `FIREBASE_CLIENT_EMAIL`
-    *   `FIREBASE_PRIVATE_KEY` (サービスアカウントキーの秘密鍵。改行も含めてそのままペースト)
-    *   `GOOGLE_PLACES_API_KEY`
-    *   `GEMINI_API_KEY`
+    *   `FIREBASE_PROJECT_ID`: (値: あなたの Firebase プロジェクトID)
+    *   `FIREBASE_CLIENT_EMAIL`: (値: あなたのサービスアカウントのクライアントメール)
+    *   `FIREBASE_PRIVATE_KEY`: (値: サービスアカウントの秘密鍵文字列。`.env.local` のダブルクォーテーションは含めず、`\n` は実際の改行として、`-----BEGIN PRIVATE KEY-----` から `-----END PRIVATE KEY-----\n` まで全てを「シークレットの値」フィールドに貼り付けてください。)
+    *   `GOOGLE_PLACES_API_KEY`: (値: あなたの Google Places API キー)
+    *   `GEMINI_API_KEY`: (値: あなたの Gemini API キー)
     *   `NEXT_PUBLIC_FIREBASE_API_KEY`
     *   `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
     *   `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
@@ -238,5 +238,3 @@ GitHub リポジトリを Firebase App Hosting に連携すると、指定した
 本番環境で必要な API キーや認証情報などの機密データは、上記「Firebase App Hosting 環境」セクションで説明されている通り、Google Cloud Secret Manager に保存し、`apphosting.yaml` を介して安全にアプリケーションに提供されます。
 
 ```
-
-      
