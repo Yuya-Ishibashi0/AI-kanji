@@ -7,8 +7,8 @@ const GOOGLE_PLACES_API_KEY = process.env.GOOGLE_PLACES_API_KEY;
 
 // --- 型定義 ---
 
-interface PlacePhoto {
-  name: string; // 例: "places/ChIJN1t_tDeuEmsRUsoyG83frY4/photos/AUacShiMW5N42k3C7g73571fHw94qlZNBGPhIL6Yg888Qx0qS9G2B7VBE_XILnSsR_nLhIHV2hP0L4Y2Kkua-xMvSQzciH_R7M9V5SgX0j0k3WpC6P8eKkua-xMvSQzciH_R7M9V5SgX0j0k3WpC6P8e"
+export interface PlacePhoto { // Firestore保存用と区別するため、APIレスポンスの型であることを明確にする
+  name: string; 
   widthPx: number;
   heightPx: number;
   authorAttributions: {
@@ -18,10 +18,10 @@ interface PlacePhoto {
   }[];
 }
 
-interface PlaceReview {
-  name: string; // 例: "places/ChIJN1t_tDeuEmsRUsoyG83frY4/reviews/AUacShiMW5N42k3C7g73571fHw94qlZNBGPhIL6Yg888Qx0qS9G2B7VBE_XILnSsR_nLhIHV2hP0L4Y2Kkua-xMvSQzciH_R7M9V5SgX0j0k3WpC6P8e"
-  relativePublishTimeDescription: string; // 例: "a week ago"
-  rating: number; // 1-5
+export interface PlaceReview { // Firestore保存用と区別するため、APIレスポンスの型であることを明確にする
+  name?: string; 
+  relativePublishTimeDescription?: string; 
+  rating: number; 
   text?: {
     text: string;
     languageCode: string;
@@ -35,19 +35,20 @@ interface PlaceReview {
     uri: string;
     photoUri: string;
   };
+  publishTime?: string; // ISO 8601 string for date
 }
 
 export interface RestaurantDetails {
   id: string;
-  name: string;
+  name: string; // APIからは displayName.text で取得
   formattedAddress?: string;
   rating?: number;
-  userRatingCount?: number; // Firestoreでは userRatingsTotal
+  userRatingCount?: number; 
   photos?: PlacePhoto[];
   reviews?: PlaceReview[];
   websiteUri?: string;
   googleMapsUri?: string;
-  internationalPhoneNumber?: string;
+  internationalPhoneNumber?: string; // APIからは internationalPhoneNumber
   regularOpeningHours?: {
     weekdayDescriptions?: string[];
   };
@@ -67,7 +68,7 @@ interface TextSearchApiResponse {
   }[];
 }
 
-interface PlaceDetailsApiResponse {
+interface PlaceDetailsApiResponse { // APIのレスポンス構造に寄せる
     id: string;
     displayName?: { text: string };
     formattedAddress?: string;
@@ -106,7 +107,7 @@ export async function textSearchNew(criteria: RestaurantCriteria): Promise<Resta
     body: JSON.stringify({
       textQuery: query,
       languageCode: 'ja',
-      maxResultCount: 10, 
+      maxResultCount: 20, // 10件から20件に増やす
     }),
   });
 
