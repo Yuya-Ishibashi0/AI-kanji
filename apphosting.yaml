@@ -1,55 +1,45 @@
-# Settings to manage and configure a Firebase App Hosting backend.
+# Firebase App Hosting バックエンド設定
 # https://firebase.google.com/docs/app-hosting/configure
 
-# Secrets from Google Cloud Secret Manager
-# These secrets need to be created in Secret Manager first, matching the names specified below.
-# The `key` is the environment variable name your app will use (e.g., process.env.KEY).
-# The `secret` is the name of the secret in Secret Manager.
-# The `version` is typically 'latest'.
+# 実行時に利用する環境変数（Secret Managerから取得）
+# サーバーサイドのコード (例: actions.ts) 内で process.env.KEY のように参照されます。
 secretEnvironmentVariables:
+  # --- サーバーサイド専用の秘密鍵 ---
+  # Firebase Admin SDKの初期化に利用
   - key: FIREBASE_PROJECT_ID
-    secret: FIREBASE_PROJECT_ID # Secret name in Secret Manager
-    version: latest
+    secret: FIREBASE_PROJECT_ID
   - key: FIREBASE_CLIENT_EMAIL
-    secret: FIREBASE_CLIENT_EMAIL # Secret name in Secret Manager
-    version: latest
+    secret: FIREBASE_CLIENT_EMAIL
   - key: FIREBASE_PRIVATE_KEY
-    secret: FIREBASE_PRIVATE_KEY # Secret name in Secret Manager
-    version: latest
-  - key: GOOGLE_PLACES_API_KEY
-    secret: GOOGLE_PLACES_API_KEY # Secret name in Secret Manager
-    version: latest
-  - key: GEMINI_API_KEY
-    secret: GEMINI_API_KEY # Secret name in Secret Manager
-    version: latest
-  - key: NEXT_PUBLIC_FIREBASE_API_KEY
-    secret: NEXT_PUBLIC_FIREBASE_API_KEY # Secret name in Secret Manager
-    version: latest
-  - key: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
-    secret: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN # Secret name in Secret Manager
-    version: latest
-  - key: NEXT_PUBLIC_FIREBASE_PROJECT_ID
-    secret: NEXT_PUBLIC_FIREBASE_PROJECT_ID # Secret name in Secret Manager
-    version: latest
-  - key: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
-    secret: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET # Secret name in Secret Manager
-    version: latest
-  - key: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
-    secret: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID # Secret name in Secret Manager
-    version: latest
-  - key: NEXT_PUBLIC_FIREBASE_APP_ID
-    secret: NEXT_PUBLIC_FIREBASE_APP_ID # Secret name in Secret Manager
-    version: latest
+    secret: FIREBASE_PRIVATE_KEY
 
+  # その他のサーバーサイドAPIキー
+  - key: GEMINI_API_KEY
+    secret: GEMINI_API_KEY
+  - key: GOOGLE_PLACES_API_KEY # Places APIをサーバーサイドで使う場合
+    secret: GOOGLE_PLACES_API_KEY
+
+  # --- ブラウザでも利用する公開鍵 (NEXT_PUBLIC_ 接頭辞付き) ---
+  # Next.jsでは、これらの変数はサーバーサイドでもビルド時にも利用可能です。
+  - key: NEXT_PUBLIC_FIREBASE_API_KEY
+    secret: NEXT_PUBLIC_FIREBASE_API_KEY
+  - key: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    secret: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+  - key: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    secret: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+  - key: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+    secret: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+  - key: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+    secret: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+  - key: NEXT_PUBLIC_FIREBASE_APP_ID
+    secret: NEXT_PUBLIC_FIREBASE_APP_ID
+
+# 実行環境の設定
 runConfig:
+  # 最大インスタンス数 (コスト管理のため低めに設定)
   maxInstances: 1
-  # For non-secret runtime environment variables, you can define them here:
-  environmentVariables:
-    TEST_VAR_DIRECT: "HelloFromApphostingYAML" # Test variable added
-    ANOTHER_TEST_VAR: "ThisIsAlsoATest"       # Another test variable
 
 # buildConfig:
-  # For non-secret build-time environment variables, you can define them here:
-  # (NEXT_PUBLIC_ variables are made available via secretEnvironmentVariables at build time too)
-  # environmentVariables:
-  #   NEXT_PUBLIC_ANOTHER_VAR: "build_value"
+# NEXT_PUBLIC_で始まる変数は、クライアントサイドのJSに埋め込むためにビルド時にも必要です。
+# App HostingではsecretEnvironmentVariablesで指定された変数はビルド時にも自動で利用可能になるため、
+# 通常はこちらに同じものを重複して書く必要はありません。
