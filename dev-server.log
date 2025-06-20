@@ -114,3 +114,39 @@ Error in getRestaurantSuggestion: Error: Value for argument "data" is not a vali
  [32m[1m✓[22m[39m Compiled in 1185ms
  [32m[1m✓[22m[39m Compiled / in 19ms
  GET / [32m200[39m in 2809ms
+ GET / [32m200[39m in 203ms
+ GET /?monospaceUid=611916 [32m200[39m in 205ms
+Step 1: Starting Places API search (textSearchNew)...
+Found 20 initial candidates from Places API.
+Step 2: Applying mechanical filtering and scoring logic...
+--- Scored & Filtered Candidates (Top scores first) ---
+ID: ChIJz6hc6SmNGGARJfjTWT9486g, Name: 肉ビストロ灯, Rating: 4.6, Reviews: 624, Types: restaurant, food, point_of_interest, establishment, Price: PRICE_LEVEL_MODERATE, Total Score: 89.23
+ID: ChIJn1JcBoWNGGARj8H_GPNCYnA, Name: 新宿 葡庵, Rating: 4.2, Reviews: 244, Types: restaurant, food, point_of_interest, establishment, Price: PRICE_LEVEL_MODERATE, Total Score: 71.20
+ID: ChIJ___zrteMGGARA0tRi6bv9zI, Name: ワインの酒場。ディプント 新宿西口店, Rating: 3.9, Reviews: 271, Types: pizza_restaurant, liquor_store, italian_restaurant, japanese_restaurant, store, restaurant, food, point_of_interest, establishment, Price: PRICE_LEVEL_MODERATE, Total Score: 66.63
+ID: ChIJiVRzF6qNGGARd7uXmhnGjxI, Name: イタリアン＆ワインバー CONA 西新宿店, Rating: 4, Reviews: 217, Types: italian_restaurant, restaurant, food, point_of_interest, establishment, Price: PRICE_LEVEL_INEXPENSIVE, Total Score: 62.32
+----------------------------------------------------
+Mechanical filtering narrowed down to 4 candidates.
+Selected top 4 candidates for fetching details.
+Step 3: Fetching details for top candidates (cache-first strategy)...
+[CACHE MISS] Firestore: No data for ID: ChIJn1JcBoWNGGARj8H_GPNCYnA in shinjuku-places. Fetching from API...
+[CACHE MISS] Firestore: No data for ID: ChIJiVRzF6qNGGARd7uXmhnGjxI in shinjuku-places. Fetching from API...
+[CACHE HIT] Firestore: Fetched 'ワインの酒場。ディプント 新宿西口店' (ID: ChIJ___zrteMGGARA0tRi6bv9zI) from shinjuku-places.
+[CACHE HIT] Firestore: Fetched '肉ビストロ灯' (ID: ChIJz6hc6SmNGGARJfjTWT9486g) from shinjuku-places.
+[CACHE SAVE] Firestore: Saved 'イタリアン＆ワインバー CONA 西新宿店' (ID: ChIJiVRzF6qNGGARd7uXmhnGjxI) to shinjuku-places.
+[CACHE SAVE] Firestore: Saved '新宿 葡庵' (ID: ChIJn1JcBoWNGGARj8H_GPNCYnA) to shinjuku-places.
+Successfully fetched/retrieved details for 4 candidates for AI analysis.
+Step 4: Running final AI analysis (selectAndAnalyzeBestRestaurants)...
+Calling analyzeRestaurantReviews (for Kanji) for: 肉ビストロ灯
+Calling analyzeRestaurantReviews (for Kanji) for: 新宿 葡庵
+Calling analyzeRestaurantReviews (for Kanji) for: イタリアン＆ワインバー CONA 西新宿店
+Returning 3 final recommendations from skilled secretary.
+AI selected/fallbacked to 3 final recommendations.
+Step 5: Fetching photo URLs and formatting final results...
+All steps completed. Returning final recommendations to client.
+ POST /?monospaceUid=611916 [32m200[39m in 14140ms
+ GET / [32m200[39m in 393ms
+ [37m[1m○[22m[39m Compiling /favicon.ico ...
+ [32m[1m✓[22m[39m Compiled /favicon.ico in 1630ms
+ GET /favicon.ico?favicon.56766c03.ico [32m200[39m in 2021ms
+ GET / [32m200[39m in 235ms
+ GET / [32m200[39m in 364ms
