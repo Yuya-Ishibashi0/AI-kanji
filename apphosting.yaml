@@ -1,25 +1,43 @@
-# Firebase App Hosting バックエンド設定
-secretEnvironmentVariables:
-  # --- サーバーサイド専用の秘密鍵 ---
-  - key: FIREBASE_PROJECT_ID
-    secret: FIREBASE_PROJECT_ID
-  - key: FIREBASE_CLIENT_EMAIL
-    secret: FIREBASE_CLIENT_EMAIL
-  - key: FIREBASE_PRIVATE_KEY
-    secret: FIREBASE_PRIVATE_KEY
-  - key: GEMINI_API_KEY
-    secret: GEMINI_API_KEY
-  - key: GOOGLE_PLACES_API_KEY
-    secret: GOOGLE_PLACES_API_KEY
-
-  # --- ブラウザでも利用する公開鍵 ---
-  - key: NEXT_PUBLIC_FIREBASE_API_KEY
-    secret: NEXT_PUBLIC_FIREBASE_API_KEY
-  - key: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
-    secret: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
-  - key: NEXT_PUBLIC_FIREBASE_PROJECT_ID
-    secret: NEXT_PUBLIC_FIREBASE_PROJECT_ID
-  # ... 他に必要なNEXT_PUBLIC_変数があればここに追加 ...
-
+# Settings for Backend (on Cloud Run).
+# See https://firebase.google.com/docs/app-hosting/configure#cloud-run
 runConfig:
   maxInstances: 1
+  # concurrency: 80
+  # cpu: 1
+  # memoryMiB: 512
+
+# Environment variables and secrets.
+# この 'env' キーの下に、すべての環境変数を定義するのが公式の推奨形式です。
+env:
+  # --- サーバーサイド専用の秘密鍵 (Secret Managerから読み込み) ---
+  - variable: FIREBASE_PROJECT_ID
+    secret: FIREBASE_PROJECT_ID
+  - variable: FIREBASE_CLIENT_EMAIL
+    secret: FIREBASE_CLIENT_EMAIL
+  - variable: FIREBASE_PRIVATE_KEY
+    secret: FIREBASE_PRIVATE_KEY
+  - variable: GEMINI_API_KEY
+    secret: GEMINI_API_KEY
+  - variable: GOOGLE_PLACES_API_KEY
+    secret: GOOGLE_PLACES_API_KEY
+
+  # Grant access to secrets in Cloud Secret Manager.
+  # See https://firebase.google.com/docs/app-hosting/configure#secret-parameters
+  # availability を指定することで、ビルド時と実行時の両方で利用可能になります。
+  # NEXT_PUBLIC_ で始まる変数は、この設定が必要です。
+  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
+    secret: NEXT_PUBLIC_FIREBASE_API_KEY
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    secret: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    secret: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    availability:
+      - BUILD
+      - RUNTIME
+  # ... 他に必要なNEXT_PUBLIC_変数があれば、上記を参考にここに追加してください ...
