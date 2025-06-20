@@ -1,4 +1,13 @@
 {
+  "hosting": [
+    {
+      "source": ".",
+      "backend": {
+        "id": "studio",
+        "region": "asia-northeast1"
+      }
+    }
+  ],
   "storage": {
     "rules": "storage.rules"
   }
