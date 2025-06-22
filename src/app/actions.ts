@@ -80,7 +80,7 @@ export async function getRestaurantSuggestion(
     // STEP 4 & 5: AI Selection and Analysis
     const aiInputCandidates = candidatesForAI.map(c => ({
         id: c.id,
-        name: c.name,
+        name: (c as any).name || (c as any).displayName || '名前不明',
         reviewsText: c.reviewsText,
         address: c.formattedAddress,
         rating: c.rating,
@@ -106,7 +106,7 @@ export async function getRestaurantSuggestion(
         {
           suggestion: {
             placeId: fallbackCandidate.id,
-            restaurantName: fallbackCandidate.name,
+            restaurantName: (fallbackCandidate as any).name || (fallbackCandidate as any).displayName || '名前不明',
             recommendationRationale: `AIによる自動選定が今回は行えませんでしたが、検索条件に最も一致し、評価が高かったお店としてこちらを提案します。機械的なフィルタリングに基づいた最上位の候補です。`,
           },
           analysis: {
@@ -227,7 +227,7 @@ export async function getPopularRestaurants(): Promise<PopularRestaurant[]> {
       
       return {
         placeId: details.id,
-        name: details.displayName || '名前不明',
+        name: details.name || details.displayName || '名前不明',
         address: details.formattedAddress || '住所不明',
         photoUrl: photoUrl,
         types: details.types || [],
