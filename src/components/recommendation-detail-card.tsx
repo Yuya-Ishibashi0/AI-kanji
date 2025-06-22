@@ -7,7 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/componen
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Award, Bot, CheckCircle, ExternalLink, GitCommitHorizontal, Group, HeartHandshake, MapPin, Sparkles, Star, Wind } from 'lucide-react';
+import { Award, Bot, CheckCircle, ExternalLink, GitCommitHorizontal, Group, HeartHandshake, MapPin, Sparkles, Star, Wind, CircleDollarSign } from 'lucide-react';
+import { useState } from "react";
+import { logUserChoice } from "@/app/actions";
+import { useToast } from "@/hooks/use-toast";
 
 const aspectIconMap: { [key: string]: React.ElementType } = {
   food: GitCommitHorizontal,
@@ -21,12 +24,42 @@ const checklistIconMap: { [key: string]: React.ElementType } = {
     groupService: CheckCircle,
 };
 
+const formatPriceLevel = (priceLevel?: string): string => {
+  if (!priceLevel) return "";
+  switch (priceLevel) {
+    case "PRICE_LEVEL_FREE":
+      return "無料";
+    case "PRICE_LEVEL_INEXPENSIVE":
+      return "¥";
+    case "PRICE_LEVEL_MODERATE":
+      return "¥¥";
+    case "PRICE_LEVEL_EXPENSIVE":
+      return "¥¥¥";
+    case "PRICE_LEVEL_VERY_EXPENSIVE":
+      return "¥¥¥¥";
+    default:
+      return "";
+  }
+};
+
 interface RecommendationDetailCardProps {
   recommendation: RecommendationResult;
 }
 
 export default function RecommendationDetailCard({ recommendation }: RecommendationDetailCardProps) {
-  const { suggestion, analysis, photoUrl, googleMapsUri, websiteUri, address, rating, userRatingsTotal } = recommendation;
+  const { suggestion, analysis, photoUrl, googleMapsUri, websiteUri, address, rating, userRatingsTotal, priceLevel, placeId } = recommendation;
+  const { toast } = useToast();
+  const [hasLogged, setHasLogged] = useState(false);
+
+  const handleLinkClick = async () => {
+    if (hasLogged) return;
+    await logUserChoice(placeId);
+    toast({
+      title: "フィードバックありがとうございます",
+      description: `${suggestion.restaurantName}へのご興味、参考にさせていただきます！`,
+    });
+    setHasLogged(true);
+  };
 
   return (
     <Card className="w-full shadow-xl overflow-hidden border-2 border-accent/50 bg-amber-50/30">
@@ -60,10 +93,18 @@ export default function RecommendationDetailCard({ recommendation }: Recommendat
                 )}
             </div>
             {rating && (
-                <div className="flex items-center gap-2 bg-background p-2 rounded-lg border flex-shrink-0 mt-2 md:mt-0">
-                    <Star className="h-5 w-5 text-yellow-500 fill-yellow-400" />
-                    <span className="font-bold text-lg">{rating}</span>
-                    <span className="text-sm text-muted-foreground">({userRatingsTotal}件)</span>
+                <div className="flex items-center gap-4 bg-background p-2 rounded-lg border flex-shrink-0 mt-2 md:mt-0">
+                    <div className="flex items-center gap-1">
+                        <Star className="h-5 w-5 text-yellow-500 fill-yellow-400" />
+                        <span className="font-bold text-lg">{rating}</span>
+                        <span className="text-sm text-muted-foreground">({userRatingsTotal}件)</span>
+                    </div>
+                    {priceLevel && formatPriceLevel(priceLevel) && (
+                         <div className="flex items-center gap-1 text-muted-foreground border-l pl-4">
+                            <CircleDollarSign className="h-5 w-5" />
+                            <span className="font-semibold text-lg text-foreground">{formatPriceLevel(priceLevel)}</span>
+                        </div>
+                    )}
                 </div>
             )}
         </div>
@@ -144,7 +185,7 @@ export default function RecommendationDetailCard({ recommendation }: Recommendat
       </CardContent>
       <CardFooter className="bg-background/50 p-4 flex flex-col sm:flex-row gap-2">
         {googleMapsUri && (
-            <Button asChild variant="outline" className="w-full">
+            <Button asChild variant="outline" className="w-full" onClick={handleLinkClick}>
                 <a href={googleMapsUri} target="_blank" rel="noopener noreferrer">
                     <MapPin className="mr-2" />
                     Google Mapsで見る
@@ -152,7 +193,7 @@ export default function RecommendationDetailCard({ recommendation }: Recommendat
             </Button>
         )}
          {websiteUri && (
-            <Button asChild variant="outline" className="w-full">
+            <Button asChild variant="outline" className="w-full" onClick={handleLinkClick}>
                 <a href={websiteUri} target="_blank" rel="noopener noreferrer">
                     <ExternalLink className="mr-2" />
                     ウェブサイト

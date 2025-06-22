@@ -4,9 +4,8 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { CircleDollarSign, MapPin, Tag, CalendarCheck2, Loader2 } from "lucide-react";
+import { CircleDollarSign, MapPin, Tag, ExternalLink } from "lucide-react";
 import Image from 'next/image';
-import { Badge } from "@/components/ui/badge";
 import { logUserChoice } from "@/app/actions";
 import { useState } from "react";
 
@@ -17,6 +16,8 @@ interface RestaurantInfoCardProps {
   address?: string;
   types?: string[];
   priceLevel?: string;
+  websiteUri?: string;
+  googleMapsUri?: string;
 }
 
 const formatPriceLevel = (priceLevel?: string): string => {
@@ -25,13 +26,13 @@ const formatPriceLevel = (priceLevel?: string): string => {
     case "PRICE_LEVEL_FREE":
       return "無料";
     case "PRICE_LEVEL_INEXPENSIVE":
-      return "～¥2000";
+      return "¥";
     case "PRICE_LEVEL_MODERATE":
-      return "¥2000～¥5000";
+      return "¥¥";
     case "PRICE_LEVEL_EXPENSIVE":
-      return "¥5000～¥10000";
+      return "¥¥¥";
     case "PRICE_LEVEL_VERY_EXPENSIVE":
-      return "¥10000～";
+      return "¥¥¥¥";
     default:
       return "";
   }
@@ -43,27 +44,25 @@ export default function RestaurantInfoCard({
   photoUrl, 
   address,
   types,
-  priceLevel 
+  priceLevel,
+  websiteUri,
+  googleMapsUri,
 }: RestaurantInfoCardProps) {
   const { toast } = useToast();
-  const [isLogging, setIsLogging] = useState(false);
+  const [hasLogged, setHasLogged] = useState(false);
 
-  const handleSelect = async () => {
-    setIsLogging(true);
+  const handleLinkClick = async () => {
+    if (hasLogged) return;
     const result = await logUserChoice(placeId);
     if (result.success) {
         toast({
-            title: "お店を選択しました",
-            description: `${name}が選択されました。`,
+            title: "フィードバックありがとうございます",
+            description: `${name}へのご興味、参考にさせていただきます！`,
         });
     } else {
-        toast({
-            title: "エラー",
-            description: "選択の記録に失敗しました。",
-            variant: "destructive",
-        });
+        console.error("Failed to log choice for popular restaurant.");
     }
-    setIsLogging(false);
+    setHasLogged(true);
   };
   
   const mainCategory = types?.find(t => t !== 'restaurant' && t !== 'food' && t !== 'point_of_interest' && t !== 'establishment')?.replace(/_/g, ' ') || '';
@@ -109,15 +108,23 @@ export default function RestaurantInfoCard({
         </div>
       </CardContent>
 
-      <CardFooter className="p-4 pt-0">
-        <Button onClick={handleSelect} disabled={isLogging} className="w-full bg-accent/20 text-accent hover:bg-accent/30 font-bold">
-            {isLogging ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-                <CalendarCheck2 className="mr-2 h-4 w-4" />
-            )}
-            空席を確認する
-        </Button>
+      <CardFooter className="p-4 pt-0 flex flex-col sm:flex-row gap-2">
+        {googleMapsUri && (
+            <Button asChild variant="outline" className="w-full" onClick={handleLinkClick}>
+                <a href={googleMapsUri} target="_blank" rel="noopener noreferrer">
+                    <MapPin className="mr-2" />
+                    Google Maps
+                </a>
+            </Button>
+        )}
+        {websiteUri && (
+            <Button asChild variant="outline" className="w-full" onClick={handleLinkClick}>
+                <a href={websiteUri} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="mr-2" />
+                    ウェブサイト
+                </a>
+            </Button>
+        )}
       </CardFooter>
     </Card>
   );

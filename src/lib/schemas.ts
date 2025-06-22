@@ -82,4 +82,6 @@ export type PopularRestaurant = {
   photoUrl?: string;
   types?: string[];
   priceLevel?: string;
+  websiteUri?: string;
+  googleMapsUri?: string;
 };

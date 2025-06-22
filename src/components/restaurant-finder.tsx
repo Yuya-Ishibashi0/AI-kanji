@@ -101,7 +101,7 @@ const defaultPriorities = `1. **場の雰囲気とプライベート感**
 
 
 export default function RestaurantFinder() {
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // Start true to show loading for popular restaurants
   const [recommendations, setRecommendations] = useState<RecommendationResult[] | null>(null);
   const [popularRestaurants, setPopularRestaurants] = useState<PopularRestaurant[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -130,7 +130,6 @@ export default function RestaurantFinder() {
   minCalendarDate.setHours(0, 0, 0, 0);
 
   useEffect(() => {
-    setIsLoading(true);
     getPopularRestaurants()
       .then(setPopularRestaurants)
       .catch(err => {
@@ -499,8 +498,8 @@ export default function RestaurantFinder() {
         </div>
       )}
 
-      {popularRestaurants && popularRestaurants.length > 0 && !recommendations && !isLoading && (
-         <div className="space-y-6">
+      {popularRestaurants && popularRestaurants.length > 0 && !isLoading && (
+         <div className="space-y-6 mt-12">
             <h2 className="text-2xl font-headline font-bold flex items-center">
                 <Users className="mr-2 h-6 w-6 text-accent" />
                 みんなが選んだお店
@@ -515,6 +514,8 @@ export default function RestaurantFinder() {
                     address={rec.address}
                     types={rec.types}
                     priceLevel={rec.priceLevel}
+                    websiteUri={rec.websiteUri}
+                    googleMapsUri={rec.googleMapsUri}
                     />
                 ))}
             </div>
@@ -524,5 +525,3 @@ export default function RestaurantFinder() {
     </div>
   );
 }
-
-    
