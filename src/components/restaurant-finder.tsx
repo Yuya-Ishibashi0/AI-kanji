@@ -11,7 +11,7 @@ import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -27,6 +27,7 @@ import RecommendationDetailCard from "./recommendation-detail-card";
 import PreferenceDisplayCard from "./preference-display-card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
 import { Textarea } from "./ui/textarea";
+import { Skeleton } from "./ui/skeleton";
 
 const timeOptions = [
   "11:00", "11:30", "12:00", "12:30", "13:00", "13:30", "14:00",
@@ -101,7 +102,8 @@ const defaultPriorities = `1. **場の雰囲気とプライベート感**
 
 
 export default function RestaurantFinder() {
-  const [isLoading, setIsLoading] = useState(true); // Start true to show loading for popular restaurants
+  const [isLoading, setIsLoading] = useState(false); // For AI search loading
+  const [isPopularLoading, setIsPopularLoading] = useState(true); // For popular restaurants loading
   const [recommendations, setRecommendations] = useState<RecommendationResult[] | null>(null);
   const [popularRestaurants, setPopularRestaurants] = useState<PopularRestaurant[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -141,7 +143,7 @@ export default function RestaurantFinder() {
         });
       })
       .finally(() => {
-        setIsLoading(false);
+        setIsPopularLoading(false);
       });
   }, [toast]);
 
@@ -498,29 +500,56 @@ export default function RestaurantFinder() {
         </div>
       )}
 
-      {popularRestaurants && popularRestaurants.length > 0 && !isLoading && (
-         <div className="space-y-6 mt-12">
-            <h2 className="text-2xl font-headline font-bold flex items-center">
-                <Users className="mr-2 h-6 w-6 text-accent" />
-                みんなが選んだお店
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {popularRestaurants.map((rec) => (
-                    <RestaurantInfoCard 
-                    key={rec.placeId} 
-                    placeId={rec.placeId}
-                    name={rec.name}
-                    photoUrl={rec.photoUrl}
-                    address={rec.address}
-                    types={rec.types}
-                    priceLevel={rec.priceLevel}
-                    websiteUri={rec.websiteUri}
-                    googleMapsUri={rec.googleMapsUri}
-                    />
-                ))}
-            </div>
-        </div>
-      )}
+      <div className="space-y-6 mt-12">
+        <h2 className="text-2xl font-headline font-bold flex items-center">
+            <Users className="mr-2 h-6 w-6 text-accent" />
+            みんなが選んだお店
+        </h2>
+        {isPopularLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <Card key={index} className="shadow-lg w-full overflow-hidden border-none flex flex-col">
+                <CardHeader className="p-0">
+                  <div className="aspect-[4/3] bg-muted rounded-t-lg overflow-hidden relative">
+                    <Skeleton className="h-full w-full" />
+                  </div>
+                </CardHeader>
+                <CardContent className="p-4 space-y-2 flex-grow">
+                  <Skeleton className="h-6 w-3/4" />
+                  <div className="space-y-2 pt-2">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-5/6" />
+                  </div>
+                </CardContent>
+                <CardFooter className="p-4 pt-0 flex flex-col sm:flex-row gap-2">
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+        ) : popularRestaurants && popularRestaurants.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {popularRestaurants.map((rec) => (
+                <RestaurantInfoCard 
+                key={rec.placeId} 
+                placeId={rec.placeId}
+                name={rec.name}
+                photoUrl={rec.photoUrl}
+                address={rec.address}
+                types={rec.types}
+                priceLevel={rec.priceLevel}
+                websiteUri={rec.websiteUri}
+                googleMapsUri={rec.googleMapsUri}
+                />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8 text-muted-foreground">
+            <p>現在、人気のお店はありません。</p>
+          </div>
+        )}
+      </div>
 
     </div>
   );
