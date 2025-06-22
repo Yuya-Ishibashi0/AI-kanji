@@ -2,6 +2,7 @@
 import { initializeApp, getApps, type FirebaseApp } from "firebase/app";
 import { getFirestore, type Firestore } from "firebase/firestore";
 
+// ▼▼▼ データベースの場所は、この NEXT_PUBLIC_FIREBASE_PROJECT_ID 環境変数で決まります ▼▼▼
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,

@@ -1,9 +1,11 @@
+
 import admin from "firebase-admin";
 import type { ServiceAccount } from "firebase-admin";
 
 // アプリがすでに初期化されている場合に、再度初期化しないための安全装置
 if (!admin.apps.length) {
   // 環境変数から認証情報を取得し、SDKが要求する形式のオブジェクトを作成
+  // ▼▼▼ データベースの場所は、この FIREBASE_PROJECT_ID 環境変数で決まります ▼▼▼
   const serviceAccount: ServiceAccount = {
     projectId: process.env.FIREBASE_PROJECT_ID,
     clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
