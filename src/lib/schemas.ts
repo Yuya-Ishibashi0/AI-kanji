@@ -1,6 +1,7 @@
 
 import { z } from "zod";
 
+// For form validation and passing to server action
 export const RestaurantCriteriaSchema = z.object({
   date: z.string().describe("The date for the restaurant reservation in YYYY-MM-DD format."),
   time: z.string().min(1, "時間を選択してください。"),
@@ -9,12 +10,15 @@ export const RestaurantCriteriaSchema = z.object({
   location: z.string().min(1, "場所を入力してください。"),
   purposeOfUse: z.string().min(1, "利用目的を選択してください。").describe("The purpose of the gathering, e.g., farewell party, welcome party."),
   privateRoomRequested: z.boolean().optional().describe("Whether the user requested a private room."),
-  customPromptPersona: z.string().optional().describe("ユーザー指定のAIペルソナ記述"),
-  customPromptPriorities: z.string().optional().describe("ユーザー指定のAI評価優先順位記述"),
+  // Dev-only fields are no longer needed with the API route architecture
+  // customPromptPersona: z.string().optional().describe("ユーザー指定のAIペルソナ記述"),
+  // customPromptPriorities: z.string().optional().describe("ユーザー指定のAI評価優先順位記述"),
 });
 
 export type RestaurantCriteria = z.infer<typeof RestaurantCriteriaSchema>;
 
+
+// For the final data structure returned to the client
 export const KanjiChecklistSchema = z.object({
   privateRoomQuality: z.string().describe("個室の質（完全個室か、防音性など）に関するレビュー分析。該当情報がなければ「情報なし」と記述。"),
   noiseLevel: z.string().describe("店内の静かさ、会話のしやすさに関するレビュー分析。該当情報がなければ「情報なし」と記述。"),
@@ -45,9 +49,7 @@ export const AnalyzeRestaurantReviewsOutputSchema = z.object({
       ),
   kanjiChecklist: KanjiChecklistSchema.optional().describe("幹事視点でのチェックリスト項目。"),
 });
-export type AnalyzeRestaurantReviewsOutput = z.infer<
-  typeof AnalyzeRestaurantReviewsOutputSchema
->;
+export type AnalyzeRestaurantReviewsOutput = z.infer<typeof AnalyzeRestaurantReviewsOutputSchema>;
 
 export const SuggestRestaurantsOutputSchema = z.object({
   restaurantName: z.string().describe('おすすめのレストラン名。日本語で記述してください。'),
@@ -55,3 +57,29 @@ export const SuggestRestaurantsOutputSchema = z.object({
 });
 export type SuggestRestaurantsOutput = z.infer<typeof SuggestRestaurantsOutputSchema>;
 
+// This is the type for the final recommendation object returned by the API route
+// and used throughout the client-side components.
+export type RecommendationResult = {
+  suggestion: SuggestRestaurantsOutput & { placeId: string };
+  analysis: AnalyzeRestaurantReviewsOutput;
+  criteria: RestaurantCriteria;
+  photoUrl?: string;
+  placeId: string;
+  websiteUri?: string;
+  googleMapsUri?: string;
+  address?: string;
+  rating?: number;
+  userRatingsTotal?: number;
+  types?: string[];
+  priceLevel?: string;
+};
+
+// Type for the popular restaurants list
+export type PopularRestaurant = {
+  placeId: string;
+  name: string;
+  address?: string;
+  photoUrl?: string;
+  types?: string[];
+  priceLevel?: string;
+};

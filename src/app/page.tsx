@@ -8,7 +8,7 @@ export default function Home() {
       <main className="flex-grow container mx-auto px-4 py-8">
         <RestaurantFinder />
       </main>
-      <footer className="py-4 text-center text-sm text-muted-foreground border-t">
+      <footer className="py-6 text-center text-sm text-muted-foreground border-t mt-12">
         © {new Date().getFullYear()} AI幹事くん. All rights reserved.
       </footer>
     </div>
