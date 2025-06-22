@@ -50,9 +50,9 @@ const purposeOfUseOptions = [
 ];
 
 const cuisineOptions = [
-  { value: "和食", label: "和食 (寿司, 天ぷら, しゃぶしゃぶ)" },
+  { value: "和食", label: "和食 (郷土料理, 天ぷら, しゃぶしゃぶ)" },
   { value: "焼肉・ホルモン", label: "焼肉／ホルモン (焼肉, ホルモン, ジンギスカン)" },
-  { value: "寿司・海鮮", label: "寿司／海鮮料理 (寿司, 魚介料理, 海鮮丼)" },
+  { value: "海鮮", label: "海鮮料理 (魚介料理, 海鮮丼、寿司)" },
   { value: "中華", label: "中華料理 (点心, 四川料理, 中華全般)" },
   { value: "イタリアン・フレンチ", label: "イタリアン／フレンチ (パスタ, ピザ, ビストロ)" },
   { value: "各国料理", label: "各国料理 (韓国, タイ, インド)" },
@@ -80,12 +80,24 @@ const RestaurantCriteriaFormSchema = RestaurantCriteriaBaseSchema.extend({
 });
 type RestaurantCriteriaFormType = z.infer<typeof RestaurantCriteriaFormSchema>;
 
-const defaultPersona = `あなたは、企業の重要な会合を数多く成功させてきた、極めて優秀で経験豊富な幹事です。あなたの使命は、単にレストランの情報を要約することではありません。提示された全ての情報源を駆使し、会の目的や参加者の背景を深く理解した上で、潜在的なリスクを洗い出し、成功を確信できる最高の店を推薦することです。あなたの分析と提案が、会の成否を左右します。`;
-const defaultPriorities = `1.  **場の雰囲気とプライベート感**: スピーチや挨拶が問題なくできるか（特にユーザーが個室を希望している場合は個室の有無・質、店全体の静けさ）。
-2.  **サービスの質**: 団体客への対応に慣れているか、ドリンク提供速度、スタッフの配慮。
-3.  **席の配置と柔軟性**: 全員が一体感を持てる席か、参加人数の変更に対応できそうか。
-4.  **料理とコストパフォーマンス**: 予算内で参加者満足度の高いコースや食事が提供されているか。
-5.  その他ユーザーの希望条件（料理ジャンル、場所など）との合致度。`;
+const defaultPersona = `あなたはこれまで数多くの企業会合を成功に導いてきた、経験豊富で有能な幹事です。  
+あなたの使命は単にレストラン情報をまとめることではありません。  
+会の目的や参加者の属性（役職・予算・好みなど）を深く理解し、  
+潜在的リスクを洗い出したうえで、成功を確信できる最適なお店を推薦してください。  
+あなたの提案が、会の成否を左右します。`;
+const defaultPriorities = `1. **場の雰囲気とプライベート感**  
+   - 個室の有無・品質  
+   - 店内の静かさ（スピーチ／挨拶がしやすいか）  
+2. **サービスの質**  
+   - 団体客対応の実績  
+   - ドリンク提供スピード、スタッフの対応力  
+3. **席の配置と柔軟性**  
+   - 全員が一体感を持てるレイアウトか  
+   - 急な人数変更への対応可否  
+4. **料理とコストパフォーマンス**
+   - 予算内で満足度の高いコースやメニューが用意されているか  
+5. **その他の希望条件との合致度**
+   - 料理ジャンル、立地、設備（プロジェクター・マイクなど）`;
 
 
 export default function RestaurantFinder() {
@@ -104,8 +116,8 @@ export default function RestaurantFinder() {
       budget: "5,000円～8,000円",
       cuisine: "",
       otherCuisine: "",
-      location: "新宿",
-      purposeOfUse: "懇親会",
+      location: "",
+      purposeOfUse: "",
       privateRoomRequested: false,
       customPromptPersona: defaultPersona,
       customPromptPriorities: defaultPriorities,
