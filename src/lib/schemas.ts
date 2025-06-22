@@ -10,9 +10,9 @@ export const RestaurantCriteriaSchema = z.object({
   location: z.string().min(1, "場所を入力してください。"),
   purposeOfUse: z.string().min(1, "利用目的を選択してください。").describe("The purpose of the gathering, e.g., farewell party, welcome party."),
   privateRoomRequested: z.boolean().optional().describe("Whether the user requested a private room."),
-  // Dev-only fields are no longer needed with the API route architecture
-  // customPromptPersona: z.string().optional().describe("ユーザー指定のAIペルソナ記述"),
-  // customPromptPriorities: z.string().optional().describe("ユーザー指定のAI評価優先順位記述"),
+  // Dev-only fields, restored based on user request.
+  customPromptPersona: z.string().optional().describe("ユーザー指定のAIペルソナ記述"),
+  customPromptPriorities: z.string().optional().describe("ユーザー指定のAI評価優先順位記述"),
 });
 
 export type RestaurantCriteria = z.infer<typeof RestaurantCriteriaSchema>;
