@@ -419,50 +419,52 @@ export default function RestaurantFinder() {
                   )}
                 />
               
-              <Accordion type="single" collapsible className="w-full">
-                <AccordionItem value="dev-options">
-                  <AccordionTrigger>
-                    <div className="flex items-center gap-2 text-sm font-semibold text-primary/80 hover:text-primary">
-                        <Bot className="h-5 w-5" />
-                        <span>AIへの指示（開発者向けオプション）</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="space-y-4 pt-4 border-t">
-                    <FormField
-                      control={form.control}
-                      name="customPromptPersona"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="flex items-center text-xs text-muted-foreground">AIへの指示 (ペルソナ) <Badge variant="outline" className="ml-2">任意</Badge></FormLabel>
-                          <FormControl>
-                            <Textarea
-                              className="min-h-[100px] text-sm"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="customPromptPriorities"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="flex items-center text-xs text-muted-foreground">AIへの指示 (評価の優先順位) <Badge variant="outline" className="ml-2">任意</Badge></FormLabel>
-                          <FormControl>
-                            <Textarea
-                              className="min-h-[140px] text-sm"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
+              {process.env.NODE_ENV === 'development' && (
+                <Accordion type="single" collapsible className="w-full">
+                  <AccordionItem value="dev-options">
+                    <AccordionTrigger>
+                      <div className="flex items-center gap-2 text-sm font-semibold text-primary/80 hover:text-primary">
+                          <Bot className="h-5 w-5" />
+                          <span>AIへの指示（開発者向けオプション）</span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="space-y-4 pt-4 border-t">
+                      <FormField
+                        control={form.control}
+                        name="customPromptPersona"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="flex items-center text-xs text-muted-foreground">AIへの指示 (ペルソナ) <Badge variant="outline" className="ml-2">任意</Badge></FormLabel>
+                            <FormControl>
+                              <Textarea
+                                className="min-h-[100px] text-sm"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="customPromptPriorities"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="flex items-center text-xs text-muted-foreground">AIへの指示 (評価の優先順位) <Badge variant="outline" className="ml-2">任意</Badge></FormLabel>
+                            <FormControl>
+                              <Textarea
+                                className="min-h-[140px] text-sm"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+              )}
 
               <Button type="submit" disabled={isLoading} className="w-full text-lg py-6 bg-accent hover:bg-accent/90 text-accent-foreground font-bold">
                 {isLoading ? (
