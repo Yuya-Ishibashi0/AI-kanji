@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -22,6 +23,8 @@ import { getRestaurantSuggestion, getPopularRestaurants } from "@/app/actions";
 import { RestaurantCriteriaSchema as RestaurantCriteriaBaseSchema, type RestaurantCriteria as LibRestaurantCriteriaType, type RecommendationResult, type PopularRestaurant } from "@/lib/schemas";
 import RestaurantInfoCard from "./restaurant-info-card";
 import { useToast } from "@/hooks/use-toast";
+import RecommendationDetailCard from "./recommendation-detail-card";
+import PreferenceDisplayCard from "./preference-display-card";
 
 const timeOptions = [
   "11:00", "11:30", "12:00", "12:30", "13:00", "13:30", "14:00",
@@ -55,6 +58,7 @@ export default function RestaurantFinder() {
   const [popularRestaurants, setPopularRestaurants] = useState<PopularRestaurant[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const [lastCriteria, setLastCriteria] = useState<(LibRestaurantCriteriaType & { date: Date }) | null>(null);
   
   const form = useForm<RestaurantCriteriaFormType>({
     resolver: zodResolver(RestaurantCriteriaFormSchema),
@@ -63,7 +67,7 @@ export default function RestaurantFinder() {
       time: "19:00",
       budget: "5,000円～8,000円",
       cuisine: "",
-      location: "",
+      location: "新宿",
       purposeOfUse: "懇親会",
       privateRoomRequested: false,
     },
@@ -104,12 +108,15 @@ export default function RestaurantFinder() {
     setIsLoading(true);
     setError(null);
     setRecommendations(null);
+    setLastCriteria(null);
 
     const criteriaForAction: LibRestaurantCriteriaType = {
       ...data,
       date: format(data.date, 'yyyy-MM-dd'),
     };
     
+    setLastCriteria({ ...criteriaForAction, date: data.date });
+
     const result = await getRestaurantSuggestion(criteriaForAction);
 
     if (result.data && result.data.length > 0) {
@@ -137,7 +144,7 @@ export default function RestaurantFinder() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-12">
       <Card className="shadow-xl border-none">
         <CardHeader>
           <CardTitle className="text-2xl font-headline flex items-center">
@@ -347,29 +354,27 @@ export default function RestaurantFinder() {
         </Card>
       )}
 
-      {recommendations && !isLoading && !error && (
-        <div className="space-y-6">
+      {recommendations && !isLoading && !error && lastCriteria && (
+        <div className="space-y-8">
+          <PreferenceDisplayCard criteria={lastCriteria} />
+          <div className="space-y-6">
             <h2 className="text-2xl font-headline font-bold flex items-center">
                 <Wand2 className="mr-2 h-6 w-6 text-accent" />
                 AIからの提案
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="space-y-8">
                 {recommendations.map((rec) => (
-                    <RestaurantInfoCard 
+                    <RecommendationDetailCard 
                     key={rec.placeId} 
-                    placeId={rec.placeId}
-                    name={rec.suggestion.restaurantName}
-                    photoUrl={rec.photoUrl}
-                    address={rec.address}
-                    types={rec.types}
-                    priceLevel={rec.priceLevel}
+                    recommendation={rec}
                     />
                 ))}
             </div>
+          </div>
         </div>
       )}
 
-      {popularRestaurants && popularRestaurants.length > 0 && (
+      {popularRestaurants && popularRestaurants.length > 0 && !recommendations && (
          <div className="space-y-6">
             <h2 className="text-2xl font-headline font-bold flex items-center">
                 <Users className="mr-2 h-6 w-6 text-accent" />
