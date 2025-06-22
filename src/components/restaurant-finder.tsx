@@ -51,27 +51,35 @@ const purposeOfUseOptions = [
 ];
 
 const cuisineOptions = [
-  { value: "居酒屋 ダイニングバー", label: "居酒屋・ダイニングバー系 (懇親会・忘年会など幅広く人気)" },
-  { value: "焼肉 肉料理", label: "焼肉・肉料理系 (若手中心の会で盛り上がりやすい)" },
-  { value: "鍋 しゃぶしゃぶ すき焼き もつ鍋", label: "鍋料理系 (忘年会・新年会など季節の会に)" },
-  { value: "和食 会席 割烹", label: "和食会席・割烹料理系 (接待や落ち着いた会合に)" },
-  { value: "イタリアン フレンチ ビストロ", label: "イタリアン・欧風料理系 (女性が多い会や送別会に)" },
-  { value: "中華料理 円卓", label: "中華料理系 (幅広い年代が参加する会に)" },
-  { value: "ビュッフェ バイキング 立食", label: "ビュッフェ・バイキング形式 (大規模な交流会に)" },
-  { value: "バー ラウンジ", label: "バー・ラウンジ系 (二次会などカジュアルな集まりに)" },
-  { value: "その他", label: "その他（自由入力）" },
+    { value: "居酒屋 ダイニングバー", label: "居酒屋・ダイニングバー系 (懇親会・忘年会など幅広く人気)" },
+    { value: "焼肉 肉料理", label: "焼肉・肉料理系 (若手中心の会で盛り上がりやすい)" },
+    { value: "鍋 しゃぶしゃぶ すき焼き もつ鍋", label: "鍋料理系 (忘年会・新年会など季節の会に)" },
+    { value: "和食 会席 割烹", label: "和食会席・割烹料理系 (接待や落ち着いた会合に)" },
+    { value: "イタリアン フレンチ ビストロ", label: "イタリアン・欧風料理系 (女性が多い会や送別会に)" },
+    { value: "中華料理 円卓", label: "中華料理系 (幅広い年代が参加する会に)" },
+    { value: "ビュッフェ バイキング 立食", label: "ビュッフェ・バイキング形式 (大規模な交流会に)" },
+    { value: "バー ラウンジ", label: "バー・ラウンジ系 (二次会などカジュアルな集まりに)" },
+    { value: "その他", label: "その他（自由入力）" },
 ];
 
 
 const RestaurantCriteriaFormSchema = RestaurantCriteriaBaseSchema.extend({
   date: z.date({ required_error: "日付を選択してください。" }).nullable().optional(),
   otherCuisine: z.string().optional(),
+  otherPurposeOfUse: z.string().optional(),
 }).superRefine((data, ctx) => {
   if (data.cuisine === 'その他' && (!data.otherCuisine || data.otherCuisine.trim() === '')) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       message: "「その他」を選択した場合は、ジャンルを入力してください。",
       path: ["otherCuisine"],
+    });
+  }
+  if (data.purposeOfUse === 'その他' && (!data.otherPurposeOfUse || data.otherPurposeOfUse.trim() === '')) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "「その他」を選択した場合は、利用目的を入力してください。",
+      path: ["otherPurposeOfUse"],
     });
   }
 });
@@ -116,6 +124,7 @@ export default function RestaurantFinder() {
       otherCuisine: "",
       location: "",
       purposeOfUse: "",
+      otherPurposeOfUse: "",
       privateRoomRequested: false,
       customPromptPersona: defaultPersona,
       customPromptPriorities: defaultPriorities,
@@ -123,6 +132,7 @@ export default function RestaurantFinder() {
   });
 
   const selectedCuisine = form.watch("cuisine");
+  const selectedPurpose = form.watch("purposeOfUse");
 
   const minCalendarDate = new Date();
   minCalendarDate.setHours(0, 0, 0, 0);
@@ -160,11 +170,13 @@ export default function RestaurantFinder() {
     setLastCriteria(null);
 
     const finalCuisine = data.cuisine === 'その他' ? (data.otherCuisine || '') : data.cuisine;
+    const finalPurposeOfUse = data.purposeOfUse === 'その他' ? (data.otherPurposeOfUse || '') : data.purposeOfUse;
 
     const criteriaForAction: LibRestaurantCriteriaType = {
       ...data,
       date: format(data.date, 'yyyy-MM-dd'),
       cuisine: finalCuisine,
+      purposeOfUse: finalPurposeOfUse,
     };
     
     setLastCriteria({ ...criteriaForAction, date: data.date });
@@ -349,28 +361,44 @@ export default function RestaurantFinder() {
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="purposeOfUse"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex items-center"><PartyPopper className="mr-2 h-4 w-4" />利用目的<Badge variant="destructive" className="ml-2">必須</Badge></FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="利用目的を選択" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {purposeOfUseOptions.map(option => (
-                            <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
+                <div className="space-y-2">
+                  <FormField
+                    control={form.control}
+                    name="purposeOfUse"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center"><PartyPopper className="mr-2 h-4 w-4" />利用目的<Badge variant="destructive" className="ml-2">必須</Badge></FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="利用目的を選択" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {purposeOfUseOptions.map(option => (
+                              <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  {selectedPurpose === 'その他' && (
+                    <FormField
+                      control={form.control}
+                      name="otherPurposeOfUse"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input placeholder="具体的な利用目的を入力 (例: プロジェクト成功の打ち上げ)" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   )}
-                />
+                </div>
               </div>
 
               <FormField
