@@ -6,7 +6,7 @@ export const RestaurantCriteriaSchema = z.object({
   date: z.string().describe("The date for the restaurant reservation in YYYY-MM-DD format."),
   time: z.string().min(1, "時間を選択してください。"),
   budget: z.string().min(1, "予算を入力してください。"),
-  cuisine: z.string().min(1, "料理の種類を入力してください。"),
+  cuisine: z.string().min(1, "お店のジャンルを入力してください。"),
   location: z.string().min(1, "場所を入力してください。"),
   purposeOfUse: z.string().min(1, "利用目的を選択してください。").describe("The purpose of the gathering, e.g., farewell party, welcome party."),
   privateRoomRequested: z.boolean().optional().describe("Whether the user requested a private room."),

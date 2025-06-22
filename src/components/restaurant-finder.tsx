@@ -49,8 +49,34 @@ const purposeOfUseOptions = [
   { value: "その他", label: "その他" },
 ];
 
+const cuisineOptions = [
+  { value: "和食", label: "和食 (寿司, 天ぷら, しゃぶしゃぶ)" },
+  { value: "焼肉・ホルモン", label: "焼肉／ホルモン (焼肉, ホルモン, ジンギスカン)" },
+  { value: "寿司・海鮮", label: "寿司／海鮮料理 (寿司, 魚介料理, 海鮮丼)" },
+  { value: "中華", label: "中華料理 (点心, 四川料理, 中華全般)" },
+  { value: "イタリアン・フレンチ", label: "イタリアン／フレンチ (パスタ, ピザ, ビストロ)" },
+  { value: "各国料理", label: "各国料理 (韓国, タイ, インド)" },
+  { value: "洋食", label: "洋食／欧風料理 (ステーキ, ハンバーグ, オムライス)" },
+  { value: "カフェ・スイーツ", label: "カフェ／スイーツ (カフェ, パン, ケーキ)" },
+  { value: "居酒屋・バー", label: "居酒屋／バー (居酒屋, バル, ダイニングバー)" },
+  { value: "ビュッフェ", label: "ビュッフェ (バイキング, 食べ放題)" },
+  { value: "鍋料理", label: "鍋料理 (しゃぶしゃぶ, すき焼き, もつ鍋)" },
+  { value: "専門店", label: "専門店 (ラーメン, カレー, お好み焼き)" },
+  { value: "その他", label: "その他（自由入力）" },
+];
+
+
 const RestaurantCriteriaFormSchema = RestaurantCriteriaBaseSchema.extend({
   date: z.date({ required_error: "日付を選択してください。" }).nullable().optional(),
+  otherCuisine: z.string().optional(),
+}).superRefine((data, ctx) => {
+  if (data.cuisine === 'その他' && (!data.otherCuisine || data.otherCuisine.trim() === '')) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "「その他」を選択した場合は、ジャンルを入力してください。",
+      path: ["otherCuisine"],
+    });
+  }
 });
 type RestaurantCriteriaFormType = z.infer<typeof RestaurantCriteriaFormSchema>;
 
@@ -77,6 +103,7 @@ export default function RestaurantFinder() {
       time: "19:00",
       budget: "5,000円～8,000円",
       cuisine: "",
+      otherCuisine: "",
       location: "新宿",
       purposeOfUse: "懇親会",
       privateRoomRequested: false,
@@ -84,6 +111,8 @@ export default function RestaurantFinder() {
       customPromptPriorities: defaultPriorities,
     },
   });
+
+  const selectedCuisine = form.watch("cuisine");
 
   const minCalendarDate = new Date();
   minCalendarDate.setHours(0, 0, 0, 0);
@@ -121,9 +150,12 @@ export default function RestaurantFinder() {
     setRecommendations(null);
     setLastCriteria(null);
 
+    const finalCuisine = data.cuisine === 'その他' ? (data.otherCuisine || '') : data.cuisine;
+
     const criteriaForAction: LibRestaurantCriteriaType = {
       ...data,
       date: format(data.date, 'yyyy-MM-dd'),
+      cuisine: finalCuisine,
     };
     
     setLastCriteria({ ...criteriaForAction, date: data.date });
@@ -255,19 +287,44 @@ export default function RestaurantFinder() {
                   )}
                 />
                 
-                <FormField
-                  control={form.control}
-                  name="cuisine"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex items-center"><ChefHat className="mr-2 h-4 w-4" />料理の種類<Badge variant="destructive" className="ml-2">必須</Badge></FormLabel>
-                      <FormControl>
-                        <Input placeholder="例: イタリアン、焼肉、寿司" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+                <div className="space-y-2">
+                  <FormField
+                    control={form.control}
+                    name="cuisine"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center"><ChefHat className="mr-2 h-4 w-4" />お店のジャンル<Badge variant="destructive" className="ml-2">必須</Badge></FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="ジャンルを選択" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {cuisineOptions.map(option => (
+                              <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  {selectedCuisine === 'その他' && (
+                    <FormField
+                      control={form.control}
+                      name="otherCuisine"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input placeholder="具体的なジャンルを入力 (例: メキシコ料理)" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   )}
-                />
+                </div>
 
                 <FormField
                   control={form.control}
@@ -455,3 +512,5 @@ export default function RestaurantFinder() {
     </div>
   );
 }
+
+    
