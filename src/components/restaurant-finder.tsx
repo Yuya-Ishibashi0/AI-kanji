@@ -54,6 +54,14 @@ const RestaurantCriteriaFormSchema = RestaurantCriteriaBaseSchema.extend({
 });
 type RestaurantCriteriaFormType = z.infer<typeof RestaurantCriteriaFormSchema>;
 
+const defaultPersona = `あなたは、企業の重要な会合を数多く成功させてきた、極めて優秀で経験豊富な幹事です。あなたの使命は、単にレストランの情報を要約することではありません。提示された全ての情報源を駆使し、会の目的や参加者の背景を深く理解した上で、潜在的なリスクを洗い出し、成功を確信できる最高の店を推薦することです。あなたの分析と提案が、会の成否を左右します。`;
+const defaultPriorities = `1.  **場の雰囲気とプライベート感**: スピーチや挨拶が問題なくできるか（特にユーザーが個室を希望している場合は個室の有無・質、店全体の静けさ）。
+2.  **サービスの質**: 団体客への対応に慣れているか、ドリンク提供速度、スタッフの配慮。
+3.  **席の配置と柔軟性**: 全員が一体感を持てる席か、参加人数の変更に対応できそうか。
+4.  **料理とコストパフォーマンス**: 予算内で参加者満足度の高いコースや食事が提供されているか。
+5.  その他ユーザーの希望条件（料理ジャンル、場所など）との合致度。`;
+
+
 export default function RestaurantFinder() {
   const [isLoading, setIsLoading] = useState(false);
   const [recommendations, setRecommendations] = useState<RecommendationResult[] | null>(null);
@@ -72,8 +80,8 @@ export default function RestaurantFinder() {
       location: "新宿",
       purposeOfUse: "懇親会",
       privateRoomRequested: false,
-      customPromptPersona: "",
-      customPromptPriorities: "",
+      customPromptPersona: defaultPersona,
+      customPromptPriorities: defaultPriorities,
     },
   });
 
@@ -334,7 +342,6 @@ export default function RestaurantFinder() {
                           <FormLabel className="flex items-center text-xs text-muted-foreground">AIへの指示 (ペルソナ) <Badge variant="outline" className="ml-2">任意</Badge></FormLabel>
                           <FormControl>
                             <Textarea
-                              placeholder="あなたは、企業の重要な会合を数多く成功させてきた、極めて優秀で経験豊富な幹事です..."
                               className="min-h-[100px] text-sm"
                               {...field}
                             />
@@ -351,7 +358,6 @@ export default function RestaurantFinder() {
                           <FormLabel className="flex items-center text-xs text-muted-foreground">AIへの指示 (評価の優先順位) <Badge variant="outline" className="ml-2">任意</Badge></FormLabel>
                           <FormControl>
                             <Textarea
-                              placeholder="1. **場の雰囲気とプライベート感**: スピーチや挨拶が問題なくできるか..."
                               className="min-h-[140px] text-sm"
                               {...field}
                             />
