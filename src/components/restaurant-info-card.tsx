@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -108,7 +107,7 @@ export default function RestaurantInfoCard({
         </div>
       </CardContent>
 
-      <CardFooter className="p-4 pt-0 flex flex-col sm:flex-row gap-2">
+      <CardFooter className="p-4 pt-0 grid grid-cols-1 sm:grid-cols-2 gap-2">
         {googleMapsUri && (
             <Button asChild variant="outline" className="w-full" onClick={handleLinkClick}>
                 <a href={googleMapsUri} target="_blank" rel="noopener noreferrer">

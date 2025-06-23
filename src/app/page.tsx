@@ -9,7 +9,7 @@ export default function Home() {
         <RestaurantFinder />
       </main>
       <footer className="py-6 text-center text-sm text-muted-foreground border-t mt-12">
-        © {new Date().getFullYear()} AI幹事くん. All rights reserved.
+        © {new Date().getFullYear()} B.FFS. All rights reserved.
       </footer>
     </div>
   );

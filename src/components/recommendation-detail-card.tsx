@@ -1,4 +1,3 @@
-
 "use client";
 
 import type { RecommendationResult } from "@/lib/schemas";
@@ -183,7 +182,7 @@ export default function RecommendationDetailCard({ recommendation }: Recommendat
           </AccordionItem>
         </Accordion>
       </CardContent>
-      <CardFooter className="bg-background/50 p-4 flex flex-col sm:flex-row gap-2">
+      <CardFooter className="bg-background/50 p-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
         {googleMapsUri && (
             <Button asChild variant="outline" className="w-full" onClick={handleLinkClick}>
                 <a href={googleMapsUri} target="_blank" rel="noopener noreferrer">
