@@ -10,6 +10,7 @@ import { Award, Bot, CheckCircle, ExternalLink, GitCommitHorizontal, Group, Hear
 import { useState } from "react";
 import { logUserChoice } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
+import { formatPriceLevel } from "@/lib/utils";
 
 const aspectIconMap: { [key: string]: React.ElementType } = {
   food: GitCommitHorizontal,
@@ -21,24 +22,6 @@ const checklistIconMap: { [key: string]: React.ElementType } = {
     privateRoomQuality: CheckCircle,
     noiseLevel: CheckCircle,
     groupService: CheckCircle,
-};
-
-const formatPriceLevel = (priceLevel?: string): string => {
-  if (!priceLevel) return "";
-  switch (priceLevel) {
-    case "PRICE_LEVEL_FREE":
-      return "無料";
-    case "PRICE_LEVEL_INEXPENSIVE":
-      return "¥";
-    case "PRICE_LEVEL_MODERATE":
-      return "¥¥";
-    case "PRICE_LEVEL_EXPENSIVE":
-      return "¥¥¥";
-    case "PRICE_LEVEL_VERY_EXPENSIVE":
-      return "¥¥¥¥";
-    default:
-      return "";
-  }
 };
 
 interface RecommendationDetailCardProps {

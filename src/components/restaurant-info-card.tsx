@@ -7,6 +7,7 @@ import { CircleDollarSign, MapPin, Tag, ExternalLink } from "lucide-react";
 import Image from 'next/image';
 import { logUserChoice } from "@/app/actions";
 import { useState } from "react";
+import { formatPriceLevel } from "@/lib/utils";
 
 interface RestaurantInfoCardProps {
   placeId: string;
@@ -18,24 +19,6 @@ interface RestaurantInfoCardProps {
   websiteUri?: string;
   googleMapsUri?: string;
 }
-
-const formatPriceLevel = (priceLevel?: string): string => {
-  if (!priceLevel) return "";
-  switch (priceLevel) {
-    case "PRICE_LEVEL_FREE":
-      return "無料";
-    case "PRICE_LEVEL_INEXPENSIVE":
-      return "¥";
-    case "PRICE_LEVEL_MODERATE":
-      return "¥¥";
-    case "PRICE_LEVEL_EXPENSIVE":
-      return "¥¥¥";
-    case "PRICE_LEVEL_VERY_EXPENSIVE":
-      return "¥¥¥¥";
-    default:
-      return "";
-  }
-};
 
 export default function RestaurantInfoCard({ 
   placeId,
