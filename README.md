@@ -16,6 +16,8 @@ AIとGoogle Places APIを組み合わせ、ユーザーの希望条件に合致�
   「個室の質」「店内の静かさ」「団体サービス」など、幹事が気になるポイントをAIがチェックして報告します。
 - **キャッシュ機能:**
   Firestoreを利用してAPI検索結果をキャッシュし、高速な応答とAPI使用量の節約を実現します。
+- **人気のお店の表示:**
+  ユーザーが選択したお店を記録し、人気のあるお店をトップページに表示します。
 
 ---
 
@@ -28,50 +30,72 @@ AIとGoogle Places APIを組み合わせ、ユーザーの希望条件に合致�
 ```mermaid
 graph TD
     User[ユーザー] --> Browser["ブラウザ (Next.js フロントエンド)"]
-    Browser --> ServerActions["Next.js サーバーアクション<br>(src/app/actions.ts)"]
-    ServerActions --> GooglePlacesAPI["Google Places API<br>(店舗検索・詳細・写真)"]
-    ServerActions --> GenkitFlows["Genkit AI フロー<br>(選定・分析・理由生成)"]
+    Browser --> ServerActions["Next.js サーバーアクション<br>src/app/actions.ts<br>(getRestaurantSuggestion)"]
+    
+    subgraph "バックエンド処理"
+        ServerActions --> GooglePlacesAPI["Google Places API<br>(店舗検索・詳細・写真取得)"]
+        ServerActions --> GenkitFlows["Genkit AI フロー<br>src/ai/flows/select-and-analyze.ts<br>(候補選定・理由生成・レビュー分析)"]
+        ServerActions --> FirestoreCache["Firestore (キャッシュ)<br>shinjuku-places"]
+        ServerActions --> FirestoreLog["Firestore (ログ)<br>userChoices"]
+    end
+    
     GooglePlacesAPI --> ServerActions
     GenkitFlows --> ServerActions
-    ServerActions --> Firestore["Firestore<br>(店舗情報キャッシュ)"]
-    Firestore --> ServerActions
-    SecretManager["Google Cloud Secret Manager<br>(APIキー等)"] -.-> AppHostingEnv["Firebase App Hosting 環境"]
-    AppHostingEnv -.-> ServerActions
+    FirestoreCache --> ServerActions
+    FirestoreLog --> ServerActions
 
-    subgraph "開発環境"
-        EnvLocal[".env.local<br>(APIキー等)"] -.-> ServerActions
+    subgraph "実行環境と設定"
+      SecretManager["Google Cloud Secret Manager<br>(本番用のAPIキー等)"] -.-> AppHostingEnv["Firebase App Hosting 環境"]
+      AppHostingEnv -.-> ServerActions
+      EnvLocal[".env.local<br>(開発用のAPIキー等)"] -.-> ServerActions
     end
 
     style Browser fill:#f9f,stroke:#333,stroke-width:2px
     style ServerActions fill:#ccf,stroke:#333,stroke-width:2px
     style GooglePlacesAPI fill:#cfc,stroke:#333,stroke-width:2px
     style GenkitFlows fill:#ffc,stroke:#333,stroke-width:2px
-    style Firestore fill:#fcc,stroke:#333,stroke-width:2px
+    style FirestoreCache fill:#fcc,stroke:#333,stroke-width:2px
+    style FirestoreLog fill:#fcc,stroke:#333,stroke-width:2px
     style SecretManager fill:#eef,stroke:#333,stroke-width:2px
     style AppHostingEnv fill:#dde,stroke:#333,stroke-width:2px
     style EnvLocal fill:#eee,stroke:#333,stroke-width:1px,stroke-dasharray: 5 5
 ```
 
-### 主要コンポーネントの役割
+---
 
-- **ブラウザ (Next.js フロントエンド):**
-  ユーザーが検索条件を入力し、結果を閲覧するUIです。
-- **Next.js サーバーアクション (`src/app/actions.ts`):**
-  フロントエンドからのリクエストを受け取り、各種APIやAIフローを呼び出すコアロジックです。
-- **Google Places API:**
-  レストランの検索、詳細情報、写真の取得を担当します。
-- **Genkit AI フロー (`src/ai/flows/`):**
-  LLM (Gemini) を利用したAI処理です。候補の選定、推薦理由の生成、レビュー分析などを行います。
-- **Firestore:**
-  Google Places APIから取得した店舗情報をキャッシュし、API呼び出し回数を削減します。
-- **Google Cloud Secret Manager / .env.local:**
-  本番環境およびローカル開発環境のAPIキーなどを安全に管理します。
-- **Firebase App Hosting:**
-  アプリケーションの本番環境です。
+## 3. 💾 Firestoreデータモデル
+
+このアプリケーションでは、データベースとしてFirestoreを使用しています。ER図のような厳密なリレーションはありませんが、以下のようなコレクション構造になっています。
+
+### `shinjuku-places` (キャッシュ用コレクション)
+Google Places APIから取得したレストランの詳細情報をキャッシュとして保存します。これにより、APIの呼び出し回数を減らし、コストと応答時間を削減します。
+
+- **ドキュメントID**: `placeId` (Google Places のユニークID)
+- **フィールド**:
+    - `id`: placeId
+    - `name`: レストラン名
+    - `formattedAddress`: 整形済み住所
+    - `rating`: 評価点
+    - `userRatingCount`: レビュー数
+    - `photos`: 写真情報の配列
+    - `reviews`: レビュー情報の配列
+    - `websiteUri`: ウェブサイトURL
+    - `googleMapsUri`: GoogleマップURL
+    - `priceLevel`: 価格帯
+    - ... その他、Google Places APIから取得した詳細情報
+    - `cachedAt`: このドキュメントがキャッシュされた日時 (Timestamp)
+
+### `userChoices` (ログ用コレクション)
+ユーザーが検索結果から「Google Mapsで見る」や「ウェブサイト」ボタンをクリックした際に、そのレストランの`placeId`を記録します。このログは「みんなが選んだお店」機能で利用されます。
+
+- **ドキュメントID**: 自動生成ID
+- **フィールド**:
+    - `placeId`: ユーザーが選択したレストランの `placeId`
+    - `selectedAt`: 選択された日時 (Timestamp)
 
 ---
 
-## 3. ⚙️ レストラン推薦の処理フロー
+## 4. ⚙️ レストラン推薦の処理フロー
 
 ユーザーが検索を開始してから、おすすめのレストランが表示されるまでの処理の流れです。
 
@@ -118,7 +142,7 @@ sequenceDiagram
     Browser->>User: 13. 結果を表示
 ```
 
-### フロー解説（リファクタリング後）
+### フロー解説
 
 `src/app/actions.ts`内の`getRestaurantSuggestion`関数が中心となり、以下のヘルパー関数を順に呼び出します。
 
@@ -126,7 +150,7 @@ sequenceDiagram
 2.  **サーバーアクション呼び出し:** ブラウザがサーバーの`getRestaurantSuggestion`関数を呼び出します。
 3.  **一次検索 (`textSearchNew`):** Google Places APIを使い、条件に合うレストランを最大20件検索します。
 4.  **機械的フィルタリング (`filterAndScoreCandidates`):** 評価が低い、レビューが少ない等の店舗を除外し、スコアリングして上位最大5件を選びます。
-5.  **キャッシュ確認:** `fetchAndCacheDetails`内で、フィルタリングされた候補についてFirestoreにキャッシュがないか確認します。
+5.  **キャッシュ確認 (`fetchAndCacheDetails`):** フィルタリングされた候補についてFirestoreにキャッシュがないか確認します。
 6.  **詳細情報取得:** キャッシュがなければ、Places APIからレビュー本文などを含む詳細な情報を取得します。
 7.  **キャッシュ保存:** APIから取得した情報は、今後のためにFirestoreに保存されます。
 8.  **AIによる選定・分析 (`selectAndAnalyzeBestRestaurants`):** 収集した最大5件の店舗情報とユーザーの利用目的を単一のGenkit AIフローに渡します。このフローが「利用目的に最適な店の選定」「推薦理由の生成」「レビューの詳細分析」をすべて実行します。
@@ -138,14 +162,20 @@ sequenceDiagram
 
 ---
 
-## 4. 🚀 セットアップ
+## 5. 🚀 セットアップ
 
-### 1. 依存関係のインストール
+### 前提条件
+このプロジェクトを実行するには、以下の環境が必要です。
+
+- **Node.js**: `v20.x` (推奨)
+- **npm**: `v10.x` (Node.jsに同梱)
+
+### 依存関係のインストール
 ```bash
 npm install
 ```
 
-### 2. 環境変数の設定
+### 環境変数の設定
 プロジェクトルートに `.env.local` ファイルを作成し、以下の内容を記述します。このファイルはGit管理されません。
 
 - **Firebase Admin SDK用 (`src/lib/firebase-admin.ts`)**
@@ -169,19 +199,17 @@ npm install
 
 ---
 
-## 5. 💻 開発コマンド
+## 6. 💻 開発コマンド
 
 - **Next.js開発サーバー:**
   ```bash
   npm run dev
   ```
-  (ポート: 9002)
 
 - **Genkit AI開発用UI:**
   ```bash
   npm run genkit:dev
   ```
-  (ポート: 4000)
 
 - **ビルド:**
   ```bash
@@ -204,7 +232,7 @@ npm install
   ```
 ---
 
-## 6. ☁️ デプロイ (Firebase App Hosting)
+## 7. ☁️ デプロイ (Firebase App Hosting)
 
 このアプリケーションは Firebase App Hosting へのデプロイを想定しています。本番環境で必要なAPIキーは、`.env.local` ではなく **Google Cloud Secret Manager** を使って設定します。
 
@@ -212,7 +240,7 @@ npm install
 
 ---
 
-## 7. 📁 ディレクトリ構成
+## 8. 📁 ディレクトリ構成
 
 - `src/`
   - `app/` … Next.js App Router。ページ (`page.tsx`)、レイアウト (`layout.tsx`)、サーバーアクション (`actions.ts`)
@@ -225,3 +253,9 @@ npm install
 - `public/` … 静的ファイル
 - `apphosting.yaml` … Firebase App Hosting の設定ファイル
 - `next.config.ts` … Next.js の設定ファイル
+
+---
+
+## 9. ライセンス
+
+このプロジェクトは [MIT License](LICENSE) の下で公開されています。
