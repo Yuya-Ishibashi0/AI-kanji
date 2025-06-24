@@ -46,9 +46,9 @@ export default function PreferenceDisplayCard({ criteria }: PreferenceDisplayCar
             <DoorOpen className="mr-2 h-5 w-5 text-muted-foreground" />
             <strong>個室希望:</strong>&nbsp;
             {criteria.privateRoomRequested ? (
-              <CheckSquare className="h-5 w-5 text-green-600" />
+              <CheckSquare className="h-5 w-5 text-primary" />
             ) : (
-              <XSquare className="h-5 w-5 text-red-600" />
+              <XSquare className="h-5 w-5 text-destructive" />
             )}
             <span className="ml-1">{criteria.privateRoomRequested ? "はい" : "いいえ"}</span>
           </div>
@@ -57,4 +57,3 @@ export default function PreferenceDisplayCard({ criteria }: PreferenceDisplayCar
     </Card>
   );
 }
-
