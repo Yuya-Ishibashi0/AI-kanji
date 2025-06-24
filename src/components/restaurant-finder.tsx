@@ -28,6 +28,7 @@ import PreferenceDisplayCard from "./preference-display-card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
 import { Textarea } from "./ui/textarea";
 import { Skeleton } from "./ui/skeleton";
+import { defaultPersona, defaultEvaluationPriorities } from "@/ai/flows/select-and-analyze";
 
 const timeOptions = [
   "11:00", "11:30", "12:00", "12:30", "13:00", "13:30", "14:00",
@@ -85,26 +86,6 @@ const RestaurantCriteriaFormSchema = RestaurantCriteriaBaseSchema.extend({
 });
 type RestaurantCriteriaFormType = z.infer<typeof RestaurantCriteriaFormSchema>;
 
-const defaultPersona = `あなたはこれまで数多くの企業会合を成功に導いてきた、経験豊富で有能な幹事です。  
-あなたの使命は単にレストラン情報をまとめることではありません。  
-会の目的や参加者の属性（役職・予算・好みなど）を深く理解し、  
-潜在的リスクを洗い出したうえで、成功を確信できる最適なお店を推薦してください。  
-あなたの提案が、会の成否を左右します。`;
-const defaultPriorities = `1. **場の雰囲気とプライベート感**  
-   - 個室の有無・品質  
-   - 店内の静かさ（スピーチ／挨拶がしやすいか）  
-2. **サービスの質**  
-   - 団体客対応の実績  
-   - ドリンク提供スピード、スタッフの対応力  
-3. **席の配置と柔軟性**  
-   - 全員が一体感を持てるレイアウトか  
-   - 急な人数変更への対応可否  
-4. **料理とコストパフォーマンス**
-   - 予算内で満足度の高いコースやメニューが用意されているか  
-5. **その他の希望条件との合致度**
-   - 料理ジャンル、立地、設備（プロジェクター・マイクなど）`;
-
-
 export default function RestaurantFinder() {
   const [isLoading, setIsLoading] = useState(false); // For AI search loading
   const [isPopularLoading, setIsPopularLoading] = useState(true); // For popular restaurants loading
@@ -126,7 +107,7 @@ export default function RestaurantFinder() {
       otherPurposeOfUse: "",
       privateRoomRequested: false,
       customPromptPersona: defaultPersona,
-      customPromptPriorities: defaultPriorities,
+      customPromptPriorities: defaultEvaluationPriorities,
     },
   });
 
@@ -153,53 +134,59 @@ export default function RestaurantFinder() {
   }, [toast]);
 
   const onSubmit: SubmitHandler<RestaurantCriteriaFormType> = async (data) => {
-    if (!data.date) {
-      toast({
-        title: "エラー",
-        description: "日付を選択してください。",
-        variant: "destructive",
-      });
-      return;
+    try {
+      if (!data.date) {
+        toast({
+          title: "エラー",
+          description: "日付を選択してください。",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      setIsLoading(true);
+      setRecommendations(null);
+      setLastCriteria(null);
+
+      const finalCuisine = data.cuisine === 'その他' ? (data.otherCuisine || '') : data.cuisine;
+      const finalPurposeOfUse = data.purposeOfUse === 'その他' ? (data.otherPurposeOfUse || '') : data.purposeOfUse;
+
+      const criteriaForAction: LibRestaurantCriteriaType = {
+        ...data,
+        date: format(data.date, 'yyyy-MM-dd'),
+        cuisine: finalCuisine,
+        purposeOfUse: finalPurposeOfUse,
+      };
+      
+      setLastCriteria({ ...criteriaForAction, date: data.date });
+
+      const { data: resultData } = await getRestaurantSuggestion(criteriaForAction);
+
+      if (resultData && resultData.length > 0) {
+        setRecommendations(resultData);
+        toast({
+          title: "お店が見つかりました！",
+          description: `${resultData.length}件のおすすめ候補を提案します。`,
+        });
+      } else {
+        setRecommendations([]); // Ensure it's an empty array for "not found" message
+        toast({
+          title: "検索結果なし",
+          description: "AIが条件に合うお店を見つけられませんでした。条件を変えて再度お試しください。",
+          variant: "destructive",
+        });
+      }
+    } catch (e) {
+        const errorMessage = e instanceof Error ? e.message : "An unknown error occurred.";
+        console.error("Error in getRestaurantSuggestion:", errorMessage);
+        toast({
+            title: "エラーが発生しました",
+            description: errorMessage,
+            variant: "destructive",
+        });
+    } finally {
+        setIsLoading(false);
     }
-    
-    setIsLoading(true);
-    setRecommendations(null);
-    setLastCriteria(null);
-
-    const finalCuisine = data.cuisine === 'その他' ? (data.otherCuisine || '') : data.cuisine;
-    const finalPurposeOfUse = data.purposeOfUse === 'その他' ? (data.otherPurposeOfUse || '') : data.purposeOfUse;
-
-    const criteriaForAction: LibRestaurantCriteriaType = {
-      ...data,
-      date: format(data.date, 'yyyy-MM-dd'),
-      cuisine: finalCuisine,
-      purposeOfUse: finalPurposeOfUse,
-    };
-    
-    setLastCriteria({ ...criteriaForAction, date: data.date });
-
-    const result = await getRestaurantSuggestion(criteriaForAction);
-
-    if (result.data && result.data.length > 0) {
-      setRecommendations(result.data);
-      toast({
-        title: "お店が見つかりました！",
-        description: `${result.data.length}件のおすすめ候補を提案します。`,
-      });
-    } else if (result.error) {
-      toast({
-        title: "エラー",
-        description: result.error,
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: "検索結果なし",
-        description: "AIが条件に合うお店を見つけられませんでした。条件を変えて再度お試しください。",
-        variant: "destructive",
-      });
-    }
-    setIsLoading(false);
   };
 
   return (
@@ -528,7 +515,7 @@ export default function RestaurantFinder() {
                     <Skeleton className="h-4 w-5/6" />
                   </div>
                 </CardContent>
-                <CardFooter className="p-4 pt-0 flex flex-col sm:flex-row gap-2">
+                <CardFooter className="p-4 pt-0 grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <Skeleton className="h-10 w-full" />
                   <Skeleton className="h-10 w-full" />
                 </CardFooter>
