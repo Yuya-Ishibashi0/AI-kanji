@@ -47,12 +47,12 @@ const SelectAndAnalyzeInputSchema = z.object({
 
 const LLMSelectionOutputSchema = z.array(SingleLLMSuggestionSchema).max(3).describe("選定されたレストラン（最大3件）とその推薦理由、Place IDのリスト。");
 
-export const defaultPersona = `
+const defaultPersona = `
 - あなたはこれまで数多くの企業会食を成功させてきた、経験豊富な幹事です。  
 - 会の目的や参加者の属性（予算感、好み）に応じて、最適な店舗を選びます。
 `;
 
-export const defaultEvaluationPriorities = `
+const defaultEvaluationPriorities = `
 # 評価基準（優先度順）
 1. **雰囲気／プライベート感**  
    - 個室の有無・品質  

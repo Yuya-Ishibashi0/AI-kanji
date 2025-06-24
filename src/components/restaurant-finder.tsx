@@ -28,7 +28,6 @@ import PreferenceDisplayCard from "./preference-display-card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
 import { Textarea } from "./ui/textarea";
 import { Skeleton } from "./ui/skeleton";
-import { defaultPersona, defaultEvaluationPriorities } from "@/ai/flows/select-and-analyze";
 
 const timeOptions = [
   "11:00", "11:30", "12:00", "12:30", "13:00", "13:30", "14:00",
@@ -63,6 +62,29 @@ const cuisineOptions = [
     { value: "その他", label: "その他（自由入力）" },
 ];
 
+const defaultPersona = `
+- あなたはこれまで数多くの企業会食を成功させてきた、経験豊富な幹事です。  
+- 会の目的や参加者の属性（予算感、好み）に応じて、最適な店舗を選びます。
+`;
+
+const defaultEvaluationPriorities = `
+# 評価基準（優先度順）
+1. **雰囲気／プライベート感**  
+   - 個室の有無・品質  
+   - 店内の静かさ（スピーチ／挨拶がしやすいか）  
+2. **団体対応力**  
+   - 団体客の受け入れ実績  
+   - ドリンク提供スピード、スタッフの気配り  
+3. **座席の柔軟性**  
+   - 席配置のアレンジ可否  
+   - 突然の人数増減への対応  
+4. **料理とコスパ**  
+   - コース内容の満足度  
+   - 予算内で質の高い料理が提供されるか  
+5. **その他の条件**  
+   - 料理ジャンル（/海鮮/ワインバールなど）  
+   - アクセス（最寄り駅からの距離） 
+`;
 
 const RestaurantCriteriaFormSchema = RestaurantCriteriaBaseSchema.extend({
   date: z.date({ required_error: "日付を選択してください。" }).nullable().optional(),
