@@ -2,7 +2,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CalendarIcon, ChefHat, Clock, DollarSign, Loader2, MapPin, Search, Wand2, DoorOpen, PartyPopper, Bot } from "lucide-react";
+import { CalendarIcon, ChefHat, Clock, DollarSign, MapPin, Search, Wand2, DoorOpen, PartyPopper, Bot } from "lucide-react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { useState } from "react";
 import { format } from "date-fns";
@@ -22,11 +22,11 @@ import { cn } from "@/lib/utils";
 import { getRestaurantSuggestion } from "@/app/actions";
 import { RestaurantCriteriaSchema as RestaurantCriteriaBaseSchema, type RestaurantCriteria as LibRestaurantCriteriaType, type RecommendationResult } from "@/lib/schemas";
 import { useToast } from "@/hooks/use-toast";
-import RecommendationDetailCard from "./recommendation-detail-card";
-import PreferenceDisplayCard from "./preference-display-card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
 import { Textarea } from "./ui/textarea";
 import PopularRestaurants from "./popular-restaurants";
+import RecommendationResults from "./recommendation-results";
+import { Loader2 } from "lucide-react";
 
 const timeOptions = [
   "11:00", "11:30", "12:00", "12:30", "13:00", "13:30", "14:00",
@@ -468,34 +468,12 @@ export default function RestaurantFinder() {
           </Form>
         </CardContent>
       </Card>
-
-      {isLoading && (
-        <div className="flex flex-col items-center justify-center space-y-4 p-8 bg-card rounded-lg shadow-lg">
-          <Loader2 className="h-12 w-12 text-primary animate-spin" />
-          <p className="text-lg font-semibold text-primary">AIが良いお店を探しています...</p>
-          <p className="text-sm text-muted-foreground">少々お待ちください。</p>
-        </div>
-      )}
-
-      {recommendations && !isLoading && lastCriteria && (
-        <div className="space-y-8">
-          <PreferenceDisplayCard criteria={lastCriteria} />
-          <div className="space-y-6">
-            <h2 className="text-2xl font-headline font-bold flex items-center">
-                <Wand2 className="mr-2 h-6 w-6 text-accent" />
-                AIからの提案
-            </h2>
-            <div className="space-y-8">
-                {recommendations.map((rec) => (
-                    <RecommendationDetailCard 
-                    key={rec.placeId} 
-                    recommendation={rec}
-                    />
-                ))}
-            </div>
-          </div>
-        </div>
-      )}
+      
+      <RecommendationResults 
+        isLoading={isLoading} 
+        recommendations={recommendations}
+        lastCriteria={lastCriteria}
+      />
 
       <PopularRestaurants />
 
