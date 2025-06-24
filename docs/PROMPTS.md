@@ -50,7 +50,7 @@
 個室希望: ${input.criteria.privateRoomRequested ? 'はい' : 'いいえ'}
 
 # レストラン候補リスト (各候補のレビュー(reviewsText プロパティ内のテキスト snippet)も参考にしてください)
-${JSON.stringify(input.candidates.map(c => ({ id: c.id, name: c.name, rating: c.rating, reviewsTextSnippet: c.reviewsText ? c.reviewsText.substring(0, 200) + '...' : 'レビューなし' })), null, 2)}
+${JSON.stringify(input.candidates.map(c => ({ id: c.id, name: c.name, rating: c.rating, userRatingsTotal: c.userRatingsTotal, types: c.types, priceLevel: c.priceLevel, reviewsTextSnippet: c.reviewsText ? c.reviewsText.substring(0, 200) + '...' : 'レビューなし' })), null, 2)}
 
 # あなたのタスク
 1.  **レストランの選定**: 候補リストの中から、送別会・歓迎会に最もふさわしいレストランを、下記の【評価の優先順位】に従って【上位3件まで】選んでください。
