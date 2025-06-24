@@ -51,7 +51,7 @@ function filterAndScoreCandidates(candidates: RestaurantCandidate[]): Restaurant
  */
 async function fetchAndCacheDetails(candidates: RestaurantCandidate[]): Promise<CandidateWithDetails[]> {
   const candidatesWithDetails: CandidateWithDetails[] = [];
-  const cacheCollection = adminDb.collection("shinjuku-places");
+  const cacheCollection = adminDb.collection("restaurantCache");
 
   for (const candidate of candidates) {
     const docRef = cacheCollection.doc(candidate.id);
@@ -158,12 +158,12 @@ async function assembleFinalResults(
  */
 export async function getRestaurantSuggestion(
   criteria: RestaurantCriteria
-): Promise<{ data?: RecommendationResult[]; error?: string }> {
+): Promise<{ data?: RecommendationResult[] }> {
   try {
     // 1. Primary Search
     const { candidates: initialCandidates } = await textSearchNew(criteria);
     if (!initialCandidates || initialCandidates.length === 0) {
-      return { error: '指定された条件に合うレストランが見つかりませんでした。' };
+      throw new Error('指定された条件に合うレストランが見つかりませんでした。');
     }
 
     // 2. Mechanical Filtering & Scoring
@@ -202,9 +202,8 @@ export async function getRestaurantSuggestion(
     return { data: results };
 
   } catch (e) {
-    console.error("Error in getRestaurantSuggestion action:", e);
     const errorMessage = e instanceof Error ? e.message : "An unknown error occurred.";
-    return { error: `処理中にエラーが発生しました: ${errorMessage}` };
+    throw new Error(`処理中にエラーが発生しました: ${errorMessage}`);
   }
 }
 
@@ -257,7 +256,7 @@ export async function getPopularRestaurants(): Promise<PopularRestaurant[]> {
     // 4. Fetch details for the top 16 restaurants from the cache collection
     const restaurantDetailsPromises = sortedPlaceIds.map(async (id) => {
         try {
-            const docRef = adminDb.collection("shinjuku-places").doc(id);
+            const docRef = adminDb.collection("restaurantCache").doc(id);
             const docSnap = await docRef.get();
             if (docSnap.exists) {
                 return { id, ...docSnap.data() };
@@ -296,3 +295,4 @@ export async function getPopularRestaurants(): Promise<PopularRestaurant[]> {
     return []; // Return empty array on error
   }
 }
+

@@ -35,7 +35,7 @@ graph TD
     subgraph "バックエンド処理"
         ServerActions --> GooglePlacesAPI["Google Places API<br>(店舗検索・詳細・写真取得)"]
         ServerActions --> GenkitFlows["Genkit AI フロー<br>src/ai/flows/select-and-analyze.ts<br>(候補選定・理由生成・レビュー分析)"]
-        ServerActions --> FirestoreCache["Firestore (キャッシュ)<br>shinjuku-places"]
+        ServerActions --> FirestoreCache["Firestore (キャッシュ)<br>restaurantCache"]
         ServerActions --> FirestoreLog["Firestore (ログ)<br>userChoices"]
     end
     
@@ -65,9 +65,9 @@ graph TD
 
 ## 3. 💾 Firestoreデータモデル
 
-このアプリケーションでは、データベースとしてFirestoreを使用しています。ER図のような厳密なリレーションはありませんが、以下のようなコレクション構造になっています。
+このアプリケーションでは、データベースとしてFirestoreを使用しています。以下のようなコレクション構造になっています。
 
-### `shinjuku-places` (キャッシュ用コレクション)
+### `restaurantCache` (キャッシュ用コレクション)
 Google Places APIから取得したレストランの詳細情報をキャッシュとして保存します。これにより、APIの呼び出し回数を減らし、コストと応答時間を削減します。
 
 - **ドキュメントID**: `placeId` (Google Places のユニークID)
