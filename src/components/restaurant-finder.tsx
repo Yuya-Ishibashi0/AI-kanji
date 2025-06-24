@@ -110,7 +110,6 @@ export default function RestaurantFinder() {
   const [isPopularLoading, setIsPopularLoading] = useState(true); // For popular restaurants loading
   const [recommendations, setRecommendations] = useState<RecommendationResult[] | null>(null);
   const [popularRestaurants, setPopularRestaurants] = useState<PopularRestaurant[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const [lastCriteria, setLastCriteria] = useState<(LibRestaurantCriteriaType & { date: Date }) | null>(null);
   
@@ -155,7 +154,6 @@ export default function RestaurantFinder() {
 
   const onSubmit: SubmitHandler<RestaurantCriteriaFormType> = async (data) => {
     if (!data.date) {
-      setError("日付が選択されていません。");
       toast({
         title: "エラー",
         description: "日付を選択してください。",
@@ -165,7 +163,6 @@ export default function RestaurantFinder() {
     }
     
     setIsLoading(true);
-    setError(null);
     setRecommendations(null);
     setLastCriteria(null);
 
@@ -190,14 +187,12 @@ export default function RestaurantFinder() {
         description: `${result.data.length}件のおすすめ候補を提案します。`,
       });
     } else if (result.error) {
-      setError(result.error);
       toast({
         title: "エラー",
         description: result.error,
         variant: "destructive",
       });
     } else {
-      setError("AIが条件に合うお店を見つけられませんでした。条件を変えて再度お試しください。");
       toast({
         title: "検索結果なし",
         description: "AIが条件に合うお店を見つけられませんでした。条件を変えて再度お試しください。",
@@ -492,21 +487,7 @@ export default function RestaurantFinder() {
         </div>
       )}
 
-      {error && !isLoading && (
-        <Card className="border-destructive bg-destructive/10 shadow-lg">
-          <CardHeader>
-            <CardTitle className="text-destructive font-headline">エラーが発生しました</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p>{error}</p>
-            <Button variant="outline" onClick={() => setError(null)} className="mt-4">
-              閉じる
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
-      {recommendations && !isLoading && !error && lastCriteria && (
+      {recommendations && !isLoading && lastCriteria && (
         <div className="space-y-8">
           <PreferenceDisplayCard criteria={lastCriteria} />
           <div className="space-y-6">
