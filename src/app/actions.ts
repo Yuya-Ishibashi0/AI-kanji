@@ -9,75 +9,170 @@ import {
   getRestaurantDetails, 
   textSearchNew,
   type RestaurantDetails as PlaceRestaurantDetails,
+  type RestaurantCandidate,
 } from "@/services/google-places-service";
-import { selectAndAnalyzeBestRestaurants } from "@/ai/flows/select-and-analyze";
+import { selectAndAnalyzeBestRestaurants, type FinalOutput } from "@/ai/flows/select-and-analyze";
 
+// Type alias for enriched candidate with review text
+type CandidateWithDetails = PlaceRestaurantDetails & { reviewsText: string };
+
+/**
+ * Filters and scores restaurant candidates based on rating and review count.
+ * @param candidates - The initial list of restaurant candidates.
+ * @returns A sorted list of the top 5 candidates.
+ * @throws An error if no suitable candidates are found after filtering.
+ */
+function filterAndScoreCandidates(candidates: RestaurantCandidate[]): RestaurantCandidate[] {
+  const MIN_RATING = 3.7;
+  const MIN_RATING_COUNT = 30;
+
+  const filteredCandidates = candidates
+    .filter(c => c.rating && c.rating >= MIN_RATING)
+    .filter(c => c.userRatingCount && c.userRatingCount >= MIN_RATING_COUNT)
+    .filter(c => c.priceLevel);
+  
+  if (filteredCandidates.length === 0) {
+    throw new Error('条件に合う評価の高いレストランが見つかりませんでした。評価の基準を少し下げてみてください。');
+  }
+    
+  const scoredCandidates = filteredCandidates.map(c => ({
+    ...c,
+    score: (c.rating || 0) + Math.log10(c.userRatingCount || 1),
+  })).sort((a, b) => b.score - a.score);
+    
+  return scoredCandidates.slice(0, 5);
+}
+
+/**
+ * Fetches detailed information for a list of candidates, utilizing a Firestore cache.
+ * @param candidates - The list of candidates to get details for.
+ * @returns A promise that resolves to a list of candidates with their detailed information.
+ * @throws An error if no details can be fetched for any candidate.
+ */
+async function fetchAndCacheDetails(candidates: RestaurantCandidate[]): Promise<CandidateWithDetails[]> {
+  const candidatesWithDetails: CandidateWithDetails[] = [];
+  const cacheCollection = adminDb.collection("shinjuku-places");
+
+  for (const candidate of candidates) {
+    const docRef = cacheCollection.doc(candidate.id);
+    const docSnap = await docRef.get();
+    let details: PlaceRestaurantDetails | null;
+
+    if (docSnap.exists) {
+      details = docSnap.data() as PlaceRestaurantDetails;
+    } else {
+      details = await getRestaurantDetails(candidate.id);
+      if (details) {
+        // Asynchronously set cache without waiting for it to complete
+        docRef.set({ ...details, cachedAt: Timestamp.now() }).catch(err => {
+          console.error(`Failed to cache details for ${candidate.id}:`, err);
+        });
+      }
+    }
+    
+    if (details) {
+      const reviewsText = details.reviews?.map((r) => r.text?.text).filter(Boolean).join('\n') || '';
+      candidatesWithDetails.push({ ...details, reviewsText });
+    }
+  }
+
+  if (candidatesWithDetails.length === 0) {
+    throw new Error('詳細情報を取得できるレストランが見つかりませんでした。');
+  }
+
+  return candidatesWithDetails;
+}
+
+/**
+ * Creates a fallback recommendation when the AI fails to provide one.
+ * @param fallbackCandidate - The top-ranked candidate to use for the fallback.
+ * @returns A FinalOutput array containing a single fallback recommendation.
+ */
+function createFallbackRecommendation(fallbackCandidate: CandidateWithDetails): FinalOutput {
+  console.log('AI did not select any restaurant, using fallback.');
+  return [{
+    suggestion: {
+      placeId: fallbackCandidate.id,
+      restaurantName: fallbackCandidate.name || (fallbackCandidate as any).displayName?.text || '名前不明',
+      recommendationRationale: `AIによる自動選定が今回は行えませんでしたが、検索条件に最も一致し、評価が高かったお店としてこちらを提案します。機械的なフィルタリングに基づいた最上位の候補です。`,
+    },
+    analysis: {
+      overallSentiment: "AIによる詳細分析は行われていません。",
+      keyAspects: { food: "情報なし", service: "情報なし", ambiance: "情報なし" },
+      groupDiningExperience: "情報なし",
+      kanjiChecklist: { privateRoomQuality: "情報なし", noiseLevel: "情報なし", groupService: "情報なし" }
+    }
+  }];
+}
+
+/**
+ * Assembles the final recommendation results from AI selections and original details.
+ * @param aiSelections - The selections made by the AI.
+ * @param originalCandidates - The list of candidates with full details.
+ * @param criteria - The user's search criteria.
+ * @returns A promise that resolves to the final list of recommendation results for the client.
+ * @throws An error if no final recommendations can be created.
+ */
+async function assembleFinalResults(
+  aiSelections: FinalOutput,
+  originalCandidates: CandidateWithDetails[],
+  criteria: RestaurantCriteria,
+): Promise<RecommendationResult[]> {
+  const resultsPromises = aiSelections.map(async (selection) => {
+    const originalDetails = originalCandidates.find(c => c.id === selection.suggestion.placeId);
+    if (!originalDetails) {
+      return null;
+    }
+    
+    const photoUrl = await buildPhotoUrl(originalDetails.photos?.[0]?.name);
+
+    return {
+      placeId: selection.suggestion.placeId,
+      suggestion: selection.suggestion,
+      analysis: selection.analysis,
+      criteria,
+      photoUrl: photoUrl,
+      websiteUri: originalDetails.websiteUri,
+      googleMapsUri: originalDetails.googleMapsUri,
+      address: originalDetails.formattedAddress,
+      rating: originalDetails.rating,
+      userRatingsTotal: originalDetails.userRatingCount,
+      types: originalDetails.types,
+      priceLevel: originalDetails.priceLevel,
+    };
+  });
+
+  const results = (await Promise.all(resultsPromises)).filter((r): r is RecommendationResult => r !== null);
+
+  if (results.length === 0) {
+    throw new Error('最終的なおすすめを作成できませんでした。条件を変えてお試しください。');
+  }
+
+  return results;
+}
+
+
+/**
+ * Main action to get restaurant suggestions based on user criteria.
+ * This function orchestrates the search, filtering, AI analysis, and result assembly.
+ */
 export async function getRestaurantSuggestion(
   criteria: RestaurantCriteria
 ): Promise<{ data?: RecommendationResult[]; error?: string }> {
   try {
-    // STEP 1: Primary Search (Google Places API)
+    // 1. Primary Search
     const { candidates: initialCandidates } = await textSearchNew(criteria);
     if (!initialCandidates || initialCandidates.length === 0) {
       return { error: '指定された条件に合うレストランが見つかりませんでした。' };
     }
 
-    // STEP 2: Mechanical Filtering & Scoring
-    const MIN_RATING = 3.7;
-    const MIN_RATING_COUNT = 30;
+    // 2. Mechanical Filtering & Scoring
+    const topCandidates = filterAndScoreCandidates(initialCandidates);
 
-    const filteredCandidates = initialCandidates
-      .filter(c => c.rating && c.rating >= MIN_RATING)
-      .filter(c => c.userRatingCount && c.userRatingCount >= MIN_RATING_COUNT)
-      .filter(c => c.priceLevel); 
-
-    if (filteredCandidates.length === 0) {
-      return { error: '条件に合う評価の高いレストランが見つかりませんでした。評価の基準を少し下げてみてください。' };
-    }
+    // 3. Fetch Details (with Caching)
+    const candidatesForAI = await fetchAndCacheDetails(topCandidates);
     
-    const scoredCandidates = filteredCandidates.map(c => ({
-      ...c,
-      score: (c.rating || 0) + Math.log10(c.userRatingCount || 1),
-    })).sort((a, b) => b.score - a.score);
-    
-    const topCandidates = scoredCandidates.slice(0, 5);
-
-    // STEP 3: Get Details and Cache
-    const candidatesForAI: (PlaceRestaurantDetails & { reviewsText: string })[] = [];
-    const cacheCollection = adminDb.collection("shinjuku-places");
-
-    for (const candidate of topCandidates) {
-      const docRef = cacheCollection.doc(candidate.id);
-      const docSnap = await docRef.get();
-      let details: PlaceRestaurantDetails | null;
-
-      if (docSnap.exists) {
-        details = docSnap.data() as PlaceRestaurantDetails;
-      } else {
-        details = await getRestaurantDetails(candidate.id);
-        if (details) {
-          await docRef.set({ ...details, cachedAt: Timestamp.now() });
-        }
-      }
-      
-      if (details) {
-        const reviewsText = details.reviews
-          ?.map((r: any) => r.text?.text)
-          .filter(Boolean)
-          .join('\n') || '';
-
-        candidatesForAI.push({
-          ...details,
-          reviewsText,
-        });
-      }
-    }
-
-    if (candidatesForAI.length === 0) {
-      return { error: '詳細情報を取得できるレストランが見つかりませんでした。' };
-    }
-
-    // STEP 4 & 5: AI Selection and Analysis
+    // 4. AI Selection and Analysis
     const aiInputCandidates = candidatesForAI.map(c => ({
         id: c.id,
         name: c.name || (c as any).displayName?.text || '名前不明',
@@ -90,62 +185,19 @@ export async function getRestaurantSuggestion(
         types: c.types,
         priceLevel: c.priceLevel,
     }));
-
-    const aiRecommendations = await selectAndAnalyzeBestRestaurants({
+    
+    let aiRecommendations = await selectAndAnalyzeBestRestaurants({
       candidates: aiInputCandidates,
       criteria,
     });
 
-    let finalSelections = aiRecommendations;
-
-    // STEP 6: Fallback Logic
-    if (!finalSelections || finalSelections.length === 0) {
-      console.log('AI did not select any restaurant, using fallback.');
-      const fallbackCandidate = candidatesForAI[0];
-      finalSelections = [
-        {
-          suggestion: {
-            placeId: fallbackCandidate.id,
-            restaurantName: fallbackCandidate.name || (fallbackCandidate as any).displayName?.text || '名前不明',
-            recommendationRationale: `AIによる自動選定が今回は行えませんでしたが、検索条件に最も一致し、評価が高かったお店としてこちらを提案します。機械的なフィルタリングに基づいた最上位の候補です。`,
-          },
-          analysis: {
-            overallSentiment: "AIによる詳細分析は行われていません。",
-            keyAspects: { food: "情報なし", service: "情報なし", ambiance: "情報なし" },
-            groupDiningExperience: "情報なし",
-            kanjiChecklist: { privateRoomQuality: "情報なし", noiseLevel: "情報なし", groupService: "情報なし" }
-          }
-        }
-      ]
+    // 5. Fallback Logic
+    if (!aiRecommendations || aiRecommendations.length === 0) {
+      aiRecommendations = createFallbackRecommendation(candidatesForAI[0]);
     }
     
-    // Final data assembly
-    const results: RecommendationResult[] = [];
-    for (const selection of finalSelections) {
-      const originalDetails = candidatesForAI.find(c => c.id === selection.suggestion.placeId);
-      if (originalDetails) {
-        const photoUrl = await buildPhotoUrl(originalDetails.photos?.[0]?.name);
-
-        results.push({
-          placeId: selection.suggestion.placeId,
-          suggestion: selection.suggestion,
-          analysis: selection.analysis,
-          criteria,
-          photoUrl: photoUrl,
-          websiteUri: originalDetails.websiteUri,
-          googleMapsUri: originalDetails.googleMapsUri,
-          address: originalDetails.formattedAddress,
-          rating: originalDetails.rating,
-          userRatingsTotal: originalDetails.userRatingCount,
-          types: originalDetails.types,
-          priceLevel: originalDetails.priceLevel,
-        });
-      }
-    }
-
-    if (results.length === 0) {
-        return { error: '最終的なおすすめを作成できませんでした。条件を変えてお試しください。' };
-    }
+    // 6. Final Data Assembly
+    const results = await assembleFinalResults(aiRecommendations, candidatesForAI, criteria);
 
     return { data: results };
 
