@@ -81,65 +81,60 @@ graph TD
 sequenceDiagram
     actor User as ユーザー
     participant Browser as ブラウザ (フロントエンド)
-    participant ServerAction as Next.jsサーバーアクション
+    participant ServerAction as Next.jsサーバーアクション<br>(actions.ts)
     participant PlacesAPI as Google Places API
-    participant Filter as 機械的フィルタリング
     participant Firestore as Firestore (キャッシュ)
-    participant GenkitAI as Genkit AI フロー
+    participant GenkitAI as Genkit AI フロー<br>(select-and-analyze.ts)
 
     User->>Browser: 1. 検索条件を入力して送信
     Browser->>ServerAction: 2. getRestaurantSuggestion(条件)
-    ServerAction->>PlacesAPI: 3. textSearchNew(クエリ)で店舗検索
-    PlacesAPI-->>ServerAction: 4. レストラン候補リスト(最大20件)
-    ServerAction->>Filter: 5. 評価やレビュー数で候補を絞り込み (上位最大5件)
-    Filter-->>ServerAction: フィルタリング済み候補
+    
+    ServerAction->>PlacesAPI: 3. textSearchNew(クエリ)で一次検索 (最大20件)
+    PlacesAPI-->>ServerAction: レストラン候補リスト
+    
+    ServerAction->>ServerAction: 4. filterAndScoreCandidates で<br>機械的に絞り込み (最大5件)
     
     loop 各候補
-        ServerAction->>Firestore: 6. IDでキャッシュを確認
+        ServerAction->>Firestore: 5. IDでキャッシュを確認
         alt キャッシュあり
             Firestore-->>ServerAction: キャッシュされた店舗情報
         else キャッシュなし
-            ServerAction->>PlacesAPI: 7. getRestaurantDetails(ID)で詳細取得
+            ServerAction->>PlacesAPI: 6. getRestaurantDetails(ID)で詳細取得
             PlacesAPI-->>ServerAction: 店舗詳細情報
-            ServerAction->>Firestore: 8. 詳細情報をキャッシュに保存
+            ServerAction->>Firestore: 7. 詳細情報をキャッシュに保存
         end
     end
-
-    ServerAction->>GenkitAI: 9. selectAndAnalyze (候補情報, 条件)
-    GenkitAI-->>GenkitAI: 10. 利用目的に最適な店を最大3件選定
-    GenkitAI-->>GenkitAI: 11. analyzeRestaurantReviewsで各店舗のレビューを詳細分析
-    GenkitAI-->>ServerAction: 12. 最終推薦リスト(推薦理由、分析結果含む)
+    
+    ServerAction->>GenkitAI: 8. selectAndAnalyzeBestRestaurants(候補, 条件)<br>AIが選定と分析を同時に実行
+    GenkitAI-->>ServerAction: 9. 最終推薦リスト (推薦理由、分析結果含む)
     
     alt AIが1件も選ばなかった場合
-      ServerAction->>ServerAction: フォールバック処理(機械フィルタの最上位を1件選択)
-    end
-
-    loop 各最終推薦レストラン
-      ServerAction->>PlacesAPI: 13. buildPhotoUrlで写真URLを取得
-      PlacesAPI-->>ServerAction: 写真URL
+      ServerAction->>ServerAction: 10. createFallbackRecommendation で<br>フォールバックを作成
     end
     
-    ServerAction-->>Browser: 14. 最終的な推薦結果を返す
-    Browser->>User: 15. 結果を表示
+    ServerAction->>ServerAction: 11. assembleFinalResults で<br>最終結果を整形 (写真URL取得など)
+    
+    ServerAction-->>Browser: 12. 最終的な推薦結果を返す
+    Browser->>User: 13. 結果を表示
 ```
 
-### フロー解説
+### フロー解説（リファクタリング後）
+
+`src/app/actions.ts`内の`getRestaurantSuggestion`関数が中心となり、以下のヘルパー関数を順に呼び出します。
 
 1.  **検索条件の入力:** ユーザーが利用目的、場所、予算などの条件を入力します。
 2.  **サーバーアクション呼び出し:** ブラウザがサーバーの`getRestaurantSuggestion`関数を呼び出します。
-3.  **一次検索:** `actions.ts`はGoogle Places APIを使い、条件に合うレストランを最大20件検索します。
-4.  **候補リスト取得:** Places APIからID、名前、評価、価格帯などを含むリストが返されます。
-5.  **機械的フィルタリング:** 評価が低い (3.7未満)、レビューが少ない (30件未満)、または団体利用に不適切な店舗を除外し、スコアリングして上位最大5件を選びます。
-6.  **キャッシュ確認:** フィルタリングされた候補について、まずFirestoreにキャッシュされた情報がないか確認します。
-7.  **詳細情報取得:** キャッシュがなければ、Places APIからレビュー本文などを含む詳細な情報を取得します。
-8.  **キャッシュ保存:** APIから取得した情報は、今後のためにFirestoreに保存します。
-9.  **AIによる選定・分析:** 収集した最大5件の店舗情報とユーザーの利用目的をGenkit AIフロー `selectAndAnalyzeBestRestaurants` に渡します。
-10. **最終候補選定:** AIが「利用目的」に最も合うレストランを最大3件まで選定し、推薦理由を生成します。
-11. **レビュー詳細分析:** AIが選んだ各店舗のレビューをさらに深く分析し、幹事向けチェックポイントなどを抽出します。
-12. **AIからの結果返却:** AIが選定した店舗ID、推薦理由、詳細な分析結果がサーバーアクションに返されます。
-13. **写真URL取得:** 最終的に推薦する各店舗の写真URLをPlaces APIから取得します。
-14. **フロントエンドへ返却:** 全ての情報を整形し、ブラウザに返します。
-15. **結果表示:** ブラウザが推薦レストランの情報を画面に表示します。
+3.  **一次検索 (`textSearchNew`):** Google Places APIを使い、条件に合うレストランを最大20件検索します。
+4.  **機械的フィルタリング (`filterAndScoreCandidates`):** 評価が低い、レビューが少ない等の店舗を除外し、スコアリングして上位最大5件を選びます。
+5.  **キャッシュ確認:** `fetchAndCacheDetails`内で、フィルタリングされた候補についてFirestoreにキャッシュがないか確認します。
+6.  **詳細情報取得:** キャッシュがなければ、Places APIからレビュー本文などを含む詳細な情報を取得します。
+7.  **キャッシュ保存:** APIから取得した情報は、今後のためにFirestoreに保存されます。
+8.  **AIによる選定・分析 (`selectAndAnalyzeBestRestaurants`):** 収集した最大5件の店舗情報とユーザーの利用目的を単一のGenkit AIフローに渡します。このフローが「利用目的に最適な店の選定」「推薦理由の生成」「レビューの詳細分析」をすべて実行します。
+9.  **AIからの結果返却:** AIが選定した店舗ID、推薦理由、詳細な分析結果がサーバーアクションに返されます。
+10. **フォールバック処理 (`createFallbackRecommendation`):** もしAIが適切な店舗を選べなかった場合、機械フィルタリングで最上位だった候補を元に、代替の推薦情報を作成します。
+11. **最終結果の整形 (`assembleFinalResults`):** AIからの推薦情報（またはフォールバック情報）に、写真URLやGoogleマップのリンクなどを追加し、フロントエンドが扱いやすい最終的な形式にまとめます。
+12. **フロントエンドへ返却:** 全ての情報を整形し、ブラウザに返します。
+13. **結果表示:** ブラウザが推薦レストランの情報を画面に表示します。
 
 ---
 
@@ -230,4 +225,3 @@ npm install
 - `public/` … 静的ファイル
 - `apphosting.yaml` … Firebase App Hosting の設定ファイル
 - `next.config.ts` … Next.js の設定ファイル
-
