@@ -2,6 +2,7 @@
 'use server';
 
 import type { RestaurantCriteria } from "@/lib/schemas";
+import { RESTAURANT_CONFIG } from '@/config/restaurant';
 
 const GOOGLE_PLACES_API_KEY = process.env.GOOGLE_PLACES_API_KEY;
 
@@ -103,11 +104,7 @@ interface PlaceDetailsApiResponse {
     priceLevel?: string;
 }
 
-const EXCLUDE_KEYWORDS_FOR_GROUP_DINING = [
-  "カウンターのみ", "立ち飲み", "席が少ない", "狭い", "小さい店",
-  "一人", "少人数", "2〜3人", "4人まで", "6人まで",
-  "バー", "スナック", "パブ", "クラブ", "ラーメン", "うどん", "そば", "テイクアウト専門"
-];
+const EXCLUDE_KEYWORDS_FOR_GROUP_DINING = RESTAURANT_CONFIG.EXCLUDE_KEYWORDS;
 
 export async function textSearchNew(criteria: RestaurantCriteria, pageToken?: string): Promise<{ candidates: RestaurantCandidate[], nextPageToken?: string }> {
   const url = 'https://places.googleapis.com/v1/places:searchText';
@@ -208,7 +205,10 @@ export async function getRestaurantDetails(placeId: string): Promise<RestaurantD
   }
 }
 
-export async function buildPhotoUrl(photoName?: string, maxHeightPx: number = 600): Promise<string | undefined> {
+export async function buildPhotoUrl(
+  photoName?: string,
+  maxHeightPx: number = RESTAURANT_CONFIG.PHOTO.MAX_HEIGHT_PX
+): Promise<string | undefined> {
     if (!photoName || !GOOGLE_PLACES_API_KEY) {
         return undefined;
     }

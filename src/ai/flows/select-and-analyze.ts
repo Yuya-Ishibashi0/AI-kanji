@@ -9,6 +9,7 @@ import {
   type AnalyzeRestaurantReviewsOutput,
 } from '@/lib/schemas';
 import { analyzeRestaurantReviews, type AnalyzeRestaurantReviewsInput } from './analyze-restaurant-reviews';
+import { AI_CONFIG } from '@/config/ai';
 
 const SingleLLMSuggestionSchema = SuggestRestaurantsOutputSchema.extend({
   placeId: z.string().describe("選択されたレストランのPlace ID。入力候補の `id` と一致させてください。"),
@@ -128,7 +129,7 @@ ${evaluationPriorities}
         format: 'json',
         schema: LLMSelectionOutputSchema,
       },
-      config: { temperature: 0.2 }, 
+      config: { temperature: AI_CONFIG.GEMINI.TEMPERATURE }, 
     });
 
     const llmSelections = llmResponse.output;

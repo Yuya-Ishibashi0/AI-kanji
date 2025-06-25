@@ -18,6 +18,7 @@ import {
   selectAndAnalyzeBestRestaurants,
   type FinalOutput,
 } from "@/ai/flows/select-and-analyze";
+import { RESTAURANT_CONFIG } from '@/config/restaurant';
 
 // ==================== 独自エラー定義 ====================
 class NoResultsError extends Error {}
@@ -59,8 +60,7 @@ class RestaurantFilterService {
   filterAndScore(
     candidates: RestaurantCandidate[]
   ): RestaurantCandidate[] {
-    const MIN_RATING = 3.7;
-    const MIN_RATING_COUNT = 30;
+    const { MIN_RATING, MIN_RATING_COUNT } = RESTAURANT_CONFIG.FILTERING;
 
     const filtered = candidates
       .filter((c) => c.rating && c.rating >= MIN_RATING)
@@ -229,8 +229,8 @@ async function assembleResults(
   });
 
   const results = (await Promise.all(resultsPromises)).filter(
-    (r): r is RecommendationResult => r !== null
-  );
+    (r): r is NonNullable<typeof r> => r !== null
+  );  
 
   if (results.length === 0) {
     throw new RecommendationError(
