@@ -3,7 +3,9 @@
 
 import type { RestaurantCriteria } from "@/lib/schemas";
 import { RESTAURANT_CONFIG } from '@/config/restaurant';
-
+import { SearchTextRequest } from '@/lib/types';
+import { GooglePlacesResponse, isValidResponse } from '@/lib/types';
+import { RecommendationError, ErrorCode } from '@/lib/errors';
 const GOOGLE_PLACES_API_KEY = process.env.GOOGLE_PLACES_API_KEY;
 
 // --- 型定義 ---
@@ -120,11 +122,13 @@ export async function textSearchNew(criteria: RestaurantCriteria, pageToken?: st
 
   const fieldMask = 'places.id,places.displayName,places.formattedAddress,places.types,places.rating,places.userRatingCount,places.priceLevel';
   
-  const requestBody: any = {
+  const requestBody: SearchTextRequest = {
     textQuery: query,
-    languageCode: 'ja', // APIリクエスト時に言語を指定
+    languageCode: 'ja',
     maxResultCount: 20,
+    ...(pageToken && { pageToken }),
   };
+
   if (pageToken) {
     requestBody.pageToken = pageToken;
   }
@@ -140,7 +144,17 @@ export async function textSearchNew(criteria: RestaurantCriteria, pageToken?: st
   });
 
   if (!response.ok) throw new Error(`Google Places API (searchText) request failed with status ${response.status}`);
-  const data: TextSearchApiResponse = await response.json();
+  const rawData = await response.json();
+  if (!isValidResponse<TextSearchApiResponsePlace>(rawData)) {
+    throw new RecommendationError(
+      'Invalid API response format',
+      ErrorCode.INVALID_API_RESPONSE,
+      'APIの返却データ形式が不正です。'
+    );
+  }
+  const data = rawData as GooglePlacesResponse<TextSearchApiResponsePlace>;
+
+
   
   const candidates = data.places ? data.places.map(place => ({
     id: place.id,

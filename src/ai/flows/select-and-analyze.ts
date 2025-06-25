@@ -10,6 +10,7 @@ import {
 } from '@/lib/schemas';
 import { analyzeRestaurantReviews, type AnalyzeRestaurantReviewsInput } from './analyze-restaurant-reviews';
 import { AI_CONFIG } from '@/config/ai';
+import { PriceLevel, isPriceLevel } from '@/lib/types';
 
 const SingleLLMSuggestionSchema = SuggestRestaurantsOutputSchema.extend({
   placeId: z.string().describe("選択されたレストランのPlace ID。入力候補の `id` と一致させてください。"),
@@ -84,14 +85,24 @@ export const selectAndAnalyzeBestRestaurants = ai.defineFlow(
     // Use default priorities if customPromptPriorities is not provided
     const evaluationPriorities = input.criteria.customPromptPriorities || defaultEvaluationPriorities;
     
-    const candidatesForPrompt = input.candidates.map(c => ({ 
-        id: c.id, 
-        name: c.name, 
-        rating: c.rating, 
-        userRatingsTotal: c.userRatingsTotal,
-        types: c.types,
-        priceLevel: c.priceLevel,
-        reviewsTextSnippet: c.reviewsText ? c.reviewsText.substring(0, 200) + '...' : 'レビューなし' 
+    interface CandidateForPrompt {
+      readonly id: string;
+      readonly name: string;
+      readonly rating?: number;
+      readonly userRatingsTotal?: number;
+      readonly types?: readonly string[];
+      readonly priceLevel?: PriceLevel;
+      readonly reviewsTextSnippet: string;
+    }
+
+    const candidatesForPrompt: readonly CandidateForPrompt[] = input.candidates.map(c => ({
+      id: c.id,
+      name: c.name,
+      rating: c.rating,
+      userRatingsTotal: c.userRatingsTotal,
+      types: c.types,
+      priceLevel: isPriceLevel(c.priceLevel) ? c.priceLevel : undefined,
+      reviewsTextSnippet: c.reviewsText ? c.reviewsText.substring(0, 200) + '...' : 'レビューなし'
     }));
 
     const selectionPrompt = `
