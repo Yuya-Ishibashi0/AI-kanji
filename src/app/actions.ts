@@ -18,25 +18,14 @@ import {
   selectAndAnalyzeBestRestaurants,
   type FinalOutput,
 } from "@/ai/flows/select-and-analyze";
-import { RESTAURANT_CONFIG } from '@/config/restaurant';
-
-// ==================== 独自エラー定義 ====================
-class NoResultsError extends Error {}
-class FilterError extends Error {}
-class DataFetchError extends Error {}
-class RecommendationError extends Error {
-  constructor(
-    message: string,
-    public code: ErrorCode = ErrorCode.UNKNOWN,
-    public originalError?: Error
-  ) {
-    super(message);
-  }
-}
-enum ErrorCode {
-  UNKNOWN = "UNKNOWN",
-  // 必要に応じて追加
-}
+import { RESTAURANT_CONFIG } from "@/config/restaurant";
+import {
+  NoResultsError,
+  FilterError,
+  DataFetchError,
+  RecommendationError,
+  ErrorCode,
+} from "@/lib/errors";
 
 // ==================== 型エイリアス ====================
 type CandidateWithDetails = PlaceRestaurantDetails & { reviewsText: string };
@@ -48,9 +37,7 @@ class RestaurantSearchService {
   ): Promise<RestaurantCandidate[]> {
     const { candidates } = await textSearchNew(criteria);
     if (!candidates || candidates.length === 0) {
-      throw new NoResultsError(
-        "指定された条件に合うレストランが見つかりませんでした。"
-      );
+      throw new NoResultsError({ criteria });
     }
     return candidates;
   }
@@ -69,7 +56,8 @@ class RestaurantFilterService {
 
     if (filtered.length === 0) {
       throw new FilterError(
-        "条件に合う評価の高いレストランが見つかりませんでした。"
+        "No qualified restaurants after filtering",
+        { candidates }
       );
     }
 
@@ -98,14 +86,14 @@ class RestaurantCacheService {
           results.push({ ...details, reviewsText });
         }
       } catch (error) {
+        // ログだけして他は続行
         console.error(`Failed to fetch details for ${candidate.id}:`, error);
-        // エラーが起きても他の候補は続行
       }
     }
 
     if (results.length === 0) {
       throw new DataFetchError(
-        "詳細情報を取得できるレストランが見つかりませんでした。"
+        "No detailed data could be fetched for any candidate"
       );
     }
 
@@ -122,7 +110,6 @@ class RestaurantCacheService {
 
     const details = await getRestaurantDetails(placeId);
     if (details) {
-      // 非同期でキャッシュ保存（エラーは無視）
       docRef.set({ ...details, cachedAt: Timestamp.now() }).catch(console.error);
     }
     return details;
@@ -230,10 +217,12 @@ async function assembleResults(
 
   const results = (await Promise.all(resultsPromises)).filter(
     (r): r is NonNullable<typeof r> => r !== null
-  );  
+  );
 
   if (results.length === 0) {
     throw new RecommendationError(
+      "assembleResults failed: No final recommendations",
+      ErrorCode.UNKNOWN,
       "最終的なおすすめを作成できませんでした。条件を変えてお試しください。"
     );
   }
@@ -274,10 +263,12 @@ export async function getRestaurantSuggestion(
     if (error instanceof RecommendationError) {
       throw error;
     }
+    // 例外がRecommendationErrorでなければ、UNKNOWNとしてラップ
     throw new RecommendationError(
       `処理中にエラーが発生しました: ${error.message}`,
       ErrorCode.UNKNOWN,
-      error instanceof Error ? error : new Error(String(error))
+      "予期せぬエラーが発生しました。",
+      error
     );
   }
 }
