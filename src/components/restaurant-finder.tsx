@@ -46,7 +46,6 @@ const purposeOfUseOptions = [
   { value: "忘年会・新年会", label: "忘年会・新年会" },
   { value: "チームビルディング・打ち上げ", label: "チームビルディング・打ち上げ" },
   { value: "二次会", label: "二次会" },
-  { value: "その他", label: "その他" },
 ];
 
 const cuisineOptions = [
@@ -58,7 +57,6 @@ const cuisineOptions = [
     { value: "中華料理 円卓", label: "中華料理系 (幅広い年代が参加する会に)" },
     { value: "ビュッフェ バイキング 立食", label: "ビュッフェ・バイキング形式 (大規模な交流会に)" },
     { value: "バー ラウンジ", label: "バー・ラウンジ系 (二次会などカジュアルな集まりに)" },
-    { value: "その他", label: "その他（自由入力）" },
 ];
 
 const defaultPersona = `
@@ -87,27 +85,32 @@ const defaultEvaluationPriorities = `
 
 const RestaurantCriteriaFormSchema = RestaurantCriteriaBaseSchema.extend({
   date: z.date({ required_error: "日付を選択してください。" }).nullable().optional(),
-  otherCuisine: z.string().optional(),
-  otherPurposeOfUse: z.string().optional(),
-}).superRefine((data, ctx) => {
-  if (data.cuisine === 'その他' && (!data.otherCuisine || data.otherCuisine.trim() === '')) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: "「その他」を選択した場合は、ジャンルを入力してください。",
-      path: ["otherCuisine"],
-    });
-  }
-  if (data.purposeOfUse === 'その他' && (!data.otherPurposeOfUse || data.otherPurposeOfUse.trim() === '')) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: "「その他」を選択した場合は、利用目的を入力してください。",
-      path: ["otherPurposeOfUse"],
-    });
-  }
+  location: z.string().trim()
+    .min(1, "場所を入力してください。")
+    .max(100, "場所は100文字以内で入力してください。"),
+  }).superRefine((data, ctx) => {
+    const emojiRegex = /[\p{Extended_Pictographic}]/u;  // 絵文字にマッチする正規表現
+    const validCharRegex = /[0-9A-Za-z\u3040-\u30FF\u4E00-\u9FFF]/;  // 英数字か日本語文字にマッチ
+
+    if (emojiRegex.test(data.location)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "場所に絵文字などの特殊文字は使用できません。",
+        path: ["location"],
+      });
+    }
+    if (!validCharRegex.test(data.location)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "場所は有効な文字を含めて入力してください。",
+        path: ["location"],
+      });
+    }
 });
 type RestaurantCriteriaFormType = z.infer<typeof RestaurantCriteriaFormSchema>;
 
 export default function RestaurantFinder() {
+  const [openCalendar, setOpenCalendar] = useState(false);
   const [isLoading, setIsLoading] = useState(false); // For AI search loading
   const [recommendations, setRecommendations] = useState<RecommendationResult[] | null>(null);
   const { toast } = useToast();
@@ -151,14 +154,9 @@ export default function RestaurantFinder() {
       setRecommendations(null);
       setLastCriteria(null);
 
-      const finalCuisine = data.cuisine === 'その他' ? (data.otherCuisine || '') : data.cuisine;
-      const finalPurposeOfUse = data.purposeOfUse === 'その他' ? (data.otherPurposeOfUse || '') : data.purposeOfUse;
-
       const criteriaForAction: LibRestaurantCriteriaType = {
         ...data,
         date: format(data.date, 'yyyy-MM-dd'),
-        cuisine: finalCuisine,
-        purposeOfUse: finalPurposeOfUse,
       };
       
       setLastCriteria({ ...criteriaForAction, date: data.date });
@@ -212,7 +210,7 @@ export default function RestaurantFinder() {
                   render={({ field }) => (
                     <FormItem className="flex flex-col">
                       <FormLabel className="flex items-center"><CalendarIcon className="mr-2 h-4 w-4" />日付<Badge variant="destructive" className="ml-2">必須</Badge></FormLabel>
-                      <Popover>
+                      <Popover open={openCalendar} onOpenChange={setOpenCalendar}>
                         <PopoverTrigger asChild>
                           <FormControl>
                             <Button
@@ -235,7 +233,10 @@ export default function RestaurantFinder() {
                           <Calendar
                             mode="single"
                             selected={field.value || undefined}
-                            onSelect={field.onChange}
+                            onSelect={(date) => {
+                            field.onChange(date);
+                            setOpenCalendar(false);
+                            }}
                             disabled={(date) => date < minCalendarDate}
                             initialFocus
                             locale={ja}
